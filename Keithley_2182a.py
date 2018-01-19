@@ -58,62 +58,64 @@ class Keithley_2182a(VisaInstrument):
             reset: Set Keithley to defaults? True or False
         """
         super().__init__(name, address, terminator='\n', **kwargs)
-        
+
         # The limits of the range function. There's a separate function for
         # autorange
         self.vranges = [[0.01, 0.1, 1., 10., 100.], [0.1, 1, 10]]
         self.tempranges = []
-        
+
         self.add_parameter('mode',
                            get_cmd='SENS:FUNC?',
                            set_cmd='SENS:FUNC {}',
                            vals = vals.Enum('VOLT', 'TEMP'))
-        
+
         self.add_parameter('channel',
                            get_cmd='SENS:CHAN?',
                            set_cmd='SENS:CHAN {}',
                            vals=vals.Ints(0,2))
-        
+
         self.add_parameter('range',
-                           get_cmd=partial(self._get_mode_param, 'RANG',
+                           get_cmd=partial(self._get_mode_param_chan, 'RANG',
                                            float),
-                           set_cmd=partial(self._set_mode_param, 'RANG'),
+                           set_cmd=partial(self._set_mode_param_chan, 'RANG'),
                            get_parser=float,
                            vals=vals.Enum(*partial(self._mode_range)))
-        
+
         self.add_parameter('auto_range_enabled',
                            get_cmd=partial(self._get_mode_param, 'RANG:AUTO',
                                            parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
                            vals=vals.Bool())
-                           
+
         self.add_parameter('measure',
                            get_cmd='SENS:DATA:FRES?',
                            get_parser=float,
                            vals=vals.Numbers(),
                            unit=self._get_unit())
-                           
-                           
-        self.add_parameter('digits',
-                           get_cmd=partial(self._get_mode_param, 'DIG', float),
-                           set_cmd=partial(self._set_mode_param, 'DIG'),
-                           vals=vals.Numbers(*partial(self._digit_range)))
-                           
-        
+
+        self.add_parameter('nplc',
+                           get_cmd=partial(self._get_mode_param, 'NPLC',
+                                           float),
+                           set_cmd=partial(self._set_mode_param, 'NPLC'),
+                           get_parser=float,
+                           vals=vals.Numbers(0.01,60))
+
+
+
         self.add_parameter('line_sync',
                            get_cmd='SYST:LSYN?',
                            set_cmd='SYST:LSYN {}',
                            vals=vals.Bool(),
                            get_parser=parse_output_bool,
                            set_parser=int)
-        
+
         self.add_parameter('front_autozero',
                            get_cmd='SYST:FAZ?',
                            set_cmd='SYST:FAZ {}',
                            get_parser=parse_output_bool,
                            set_parser=int,
                            vals=vals.Bool())
-        
+
         self.add_parameter('autozero',
                            get_cmd='SYST:AZER?',
                            set_cmd='SYST:AZER {}',
@@ -125,24 +127,24 @@ class Keithley_2182a(VisaInstrument):
                            set_cmd='UNIT:TEMP {}',
                            get_parser=parse_output_string,
                            vals=vals.Enum('C', 'F', 'K'))
-        
+
         self.add_function('reset', call_cmd='*RST')
 
-        
+
         if reset:
             self.reset()
-        
+
         self.connect_message()
-        
+
     def autocalibrate(self):
-        """Initializes calibration, asks if you want to continue, and 
-        does low-level calibration. It's recommended if the 
+        """Initializes calibration, asks if you want to continue, and
+        does low-level calibration. It's recommended if the
         temperature difference is above 1 deg C.
         Takes about 5 minutes if you continue"""
         self.write('CAL:UNPR:ACAL:INIT')
         prevtemp = parse_output_string(self.ask('CAL:UNPR:ACAL:TEMP?'))
         currtemp = parse_output_string(self.ask('SENS:TEMP:RTEM?'))
-        
+
         answer = input('The last time ACAL was run,'+
                        'the temp was {} C\n'.format(prevtemp)+
               'Now the temp is {} C\n'.format(currtemp)+
@@ -157,12 +159,22 @@ class Keithley_2182a(VisaInstrument):
         else:
             print('Must be in voltage mode, range 10mV')
             self.write('CAL:UNPR:ACAL:DONE')
-            
-        
+
+
     def _get_mode_param(self, parameter: str, parser):
         """ Read the current Keithley mode and ask for a parameter """
         mode = parse_output_string(self.mode())
         cmd = 'SENS:{}:{}?'.format(mode, parameter)
+
+        return parser(self.ask(cmd))
+
+    def _get_mode_param_chan(self, parameter: str, parser, chan=None):
+        """ Read the current Keithley mode and ask for a parameter """
+        mode = parse_output_string(self.mode())
+        if chan != None:
+            chan = parse_output_string(self.channel())
+        cstring = 'CHAN{}'.format(chan)
+        cmd = 'SENS:{}:{}:{}?'.format(mode, cstring, parameter)
 
         return parser(self.ask(cmd))
 
@@ -174,7 +186,19 @@ class Keithley_2182a(VisaInstrument):
         mode = parse_output_string(self.mode())
         cmd = 'SENS:{}:{} {}'.format(mode, parameter, value)
         self.write(cmd)
-        
+
+    def _set_mode_param_chan(self, parameter: str, value, chan=None):
+        """ Read the current Keithley mode and set a parameter """
+        if isinstance(value, bool):
+            value = int(value)
+
+        mode = parse_output_string(self.mode())
+        if chan != None:
+            chan = parse_output_string(self.channel())
+        cstring = 'CHAN{}'.format(chan)
+        cmd = 'SENS:{}:{}:{} {}'.format(mode, cstring, parameter, value)
+        self.write(cmd)
+
     def _mode_range(self):
         """ Returns the different range settings for a given mode """
         if self.channel() == 0:
@@ -185,7 +209,7 @@ class Keithley_2182a(VisaInstrument):
             return self.tempranges[self.channel()-1]
         else:
             raise ValueError('Not VOLT or TEMP in _mode_range')
-    
+
     def _digit_range(self):
         """ Feeds number of digit min and max to Enum validator"""
         if self.mode() == 'VOLT':
@@ -194,7 +218,7 @@ class Keithley_2182a(VisaInstrument):
             return np.arange(4, 8, 1)
         else:
             raise ValueError('Must be VOLT or TEMP in _digit_range')
-    
+
     def _get_unit(self):
         """ Returns the unit for the current measurement mode"""
         if self.mode() == 'VOLT':
