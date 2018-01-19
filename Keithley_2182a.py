@@ -46,6 +46,7 @@ def parse_output_bool(value):
     else:
         raise ValueError('Must be boolean, 0 or 1, True or False')
 
+#%%
 class Keithley_2182a(VisaInstrument):
     """
     The Instrument driver for the Keithley 2182a nanovoltmeter
@@ -85,7 +86,7 @@ class Keithley_2182a(VisaInstrument):
                            get_cmd=partial(self._get_mode_param, 'RANG:AUTO',
                                            parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
-                           vals=vals.Bool())
+                           vals=vals.Bool(parse_output_bool()))
 
         self.add_parameter('measure',
                            get_cmd='SENS:DATA:FRES?',
@@ -169,7 +170,7 @@ class Keithley_2182a(VisaInstrument):
     def _get_mode_param_chan(self, parameter: str, parser, chan=None):
         """ Read the current Keithley mode and ask for a parameter """
         mode = parse_output_string(self.mode())
-        if chan != None:
+        if chan == None:
             chan = parse_output_string(self.channel())
         cstring = 'CHAN{}'.format(chan)
         cmd = 'SENS:{}:{}:{}?'.format(mode, cstring, parameter)
@@ -191,7 +192,7 @@ class Keithley_2182a(VisaInstrument):
             value = int(value)
 
         mode = parse_output_string(self.mode())
-        if chan != None:
+        if chan == None:
             chan = parse_output_string(self.channel())
         cstring = 'CHAN{}'.format(chan)
         cmd = 'SENS:{}:{}:{} {}'.format(mode, cstring, parameter, value)
