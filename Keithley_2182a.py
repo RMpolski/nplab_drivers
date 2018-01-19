@@ -35,6 +35,9 @@ def parse_output_string(s):
 
     if s.lower() in conversions.keys(): # To comment out line 28, changed here too
         s = conversions[s]
+    
+    if s[-3:] == ':DC':
+        s = s[:-3]
 
     return s
 
@@ -43,8 +46,16 @@ def parse_output_bool(value):
         return True
     elif int(value) == 0:
         return False
+    elif value == True or value == False:
+        return value
     else:
         raise ValueError('Must be boolean, 0 or 1, True or False')
+
+def parse_input_bool(value):
+    if value:
+        return True
+    else:
+        return False
 
 #%%
 class Keithley_2182a(VisaInstrument):
@@ -126,6 +137,19 @@ class Keithley_2182a(VisaInstrument):
                            set_cmd='UNIT:TEMP {}',
                            get_parser=parse_output_string,
                            vals=vals.Enum('C', 'F', 'K'))
+        
+        self.add_parameter('display_enable',
+                           get_cmd='DISP:ENAB',
+                           set_cmd='DISP:ENAB {}',
+                           get_parser=parse_output_bool,
+                           set_parser=parse_input_bool,
+                           vals=vals.Bool())
+        self.add_parameter('beeper',
+                           get_cmd='SYST:BEEP?',
+                           set_cmd='SYST:BEEP {}',
+                           get_parser=parse_output_bool,
+                           set_parser=parse_input_bool,
+                           vals=vals.Bool())
 
         self.add_function('reset', call_cmd='*RST')
 

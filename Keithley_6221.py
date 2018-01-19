@@ -19,8 +19,16 @@ def parse_output_bool(value):
         return True
     elif int(value) == 0:
         return False
+    elif value == True or value == False:
+        return value
     else:
         raise ValueError('Must be boolean, 0 or 1, True or False')
+
+def parse_input_bool(value):
+    if value:
+        return True
+    else:
+        return False
 
 class Keithley_6221(VisaInstrument):
     """
@@ -46,6 +54,25 @@ class Keithley_6221(VisaInstrument):
                            get_cmd='OUTP:STAT?',
                            set_cmd='OUTP:STAT {}',
                            get_parser=int)
+        self.add_parameter('delay',
+                           get_cmd='SOUR:DEL?',
+                           set_cmd='SOUR:DEL {}',
+                           get_parser=float,
+                           vals=vals.Numbers(0.001, 999999.999))
+        self.add_parameter('beeper',
+                           get_cmd='SYST:BEEP?',
+                           set_cmd='SYST:BEEP {}',
+                           get_parser=parse_output_bool,
+                           set_parser=parse_input_bool,
+                           vals=vals.Bool())
+        self.add_parameter('display_enable',
+                           get_cmd='DISP:ENAB',
+                           set_cmd='DISP:ENAB {}',
+                           get_parser=parse_output_bool,
+                           set_parser=parse_input_bool,
+                           vals=vals.Bool())
+        
+        self.add_function('last_error', call_cmd='STAT:QUE:NEXT?')
         
         if reset:
             self.reset()
