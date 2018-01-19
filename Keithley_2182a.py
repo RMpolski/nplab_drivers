@@ -91,7 +91,7 @@ class Keithley_2182a(VisaInstrument):
                            get_cmd='SENS:DATA:FRES?',
                            get_parser=float,
                            vals=vals.Numbers(),
-                           unit=self._get_unit())
+                           unit='V') #change to pull from the measurement type
 
         self.add_parameter('nplc',
                            get_cmd=partial(self._get_mode_param, 'NPLC',
@@ -99,8 +99,6 @@ class Keithley_2182a(VisaInstrument):
                            set_cmd=partial(self._set_mode_param, 'NPLC'),
                            get_parser=float,
                            vals=vals.Numbers(0.01,60))
-
-
 
         self.add_parameter('line_sync',
                            get_cmd='SYST:LSYN?',
