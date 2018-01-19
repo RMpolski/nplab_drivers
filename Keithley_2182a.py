@@ -79,7 +79,7 @@ class Keithley_2182a(VisaInstrument):
                                            float),
                            set_cmd=partial(self._set_mode_param_chan, 'RANG'),
                            get_parser=float,
-                           vals=vals.Enum(*self._mode_range()))
+                           vals=vals.Enum(*self.vranges[0])) #connect to _mode_range
 
         self.add_parameter('auto_range_enabled',
                            get_cmd=partial(self._get_mode_param, 'RANG:AUTO',
