@@ -53,25 +53,25 @@ class Keithley_6221(VisaInstrument):
         self.add_parameter('output',
                            get_cmd='OUTP:STAT?',
                            set_cmd='OUTP:STAT {}',
-                           get_parser=int)
+                           get_parser=int,
+                           vals=vals.Ints(0,1))
         self.add_parameter('delay',
                            get_cmd='SOUR:DEL?',
                            set_cmd='SOUR:DEL {}',
                            get_parser=float,
                            vals=vals.Numbers(0.001, 999999.999))
+        self.add_parameter('display',
+                           get_cmd='DISP:ENAB',
+                           set_cmd='DISP:ENAB {}',
+                           get_parser=int,
+                           vals=vals.Ints(0,1))
         self.add_parameter('beeper',
                            get_cmd='SYST:BEEP?',
                            set_cmd='SYST:BEEP {}',
-                           get_parser=parse_output_bool,
-                           set_parser=parse_input_bool,
-                           vals=vals.Bool())
-        self.add_parameter('display_enable',
-                           get_cmd='DISP:ENAB',
-                           set_cmd='DISP:ENAB {}',
-                           get_parser=parse_output_bool,
-                           set_parser=parse_input_bool,
-                           vals=vals.Bool())
+                           get_parser=int,
+                           vals=vals.Ints(0,1))
         
+        self.add_function('reset', call_cmd='*RST')
         self.add_function('last_error', call_cmd='STAT:QUE:NEXT?')
         
         if reset:

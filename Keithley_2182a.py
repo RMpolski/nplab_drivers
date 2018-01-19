@@ -79,6 +79,7 @@ class Keithley_2182a(VisaInstrument):
         self.add_parameter('mode',
                            get_cmd='SENS:FUNC?',
                            set_cmd='SENS:FUNC {}',
+                           get_parser=parse_output_string,
                            vals = vals.Enum('VOLT', 'TEMP'))
 
         self.add_parameter('channel',
@@ -97,7 +98,7 @@ class Keithley_2182a(VisaInstrument):
                            get_cmd=partial(self._get_mode_param, 'RANG:AUTO',
                                            parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
-                           vals=vals.Bool())
+                           vals=Ints(0,1))
 
         self.add_parameter('measure',
                            get_cmd='SENS:DATA:FRES?',
@@ -116,22 +117,21 @@ class Keithley_2182a(VisaInstrument):
                            get_cmd='SYST:LSYN?',
                            set_cmd='SYST:LSYN {}',
                            vals=vals.Bool(),
-                           get_parser=parse_output_bool,
-                           set_parser=int)
+                           get_parser=int,
+                           vals=vals.Ints(0,1))
 
         self.add_parameter('front_autozero',
                            get_cmd='SYST:FAZ?',
                            set_cmd='SYST:FAZ {}',
-                           get_parser=parse_output_bool,
-                           set_parser=int,
-                           vals=vals.Bool())
+                           get_parser=int,
+                           vals=vals.Ints(0,1))
 
         self.add_parameter('autozero',
                            get_cmd='SYST:AZER?',
                            set_cmd='SYST:AZER {}',
                            get_parser=parse_output_bool,
                            set_parser=int,
-                           vals=vals.Bool())
+                           vals=vals.Ints(0,1))
         self.add_parameter('temp_unit',
                            get_cmd='UNIT:TEMP?',
                            set_cmd='UNIT:TEMP {}',
