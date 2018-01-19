@@ -86,7 +86,7 @@ class Keithley_2182a(VisaInstrument):
                            get_cmd=partial(self._get_mode_param, 'RANG:AUTO',
                                            parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
-                           vals=vals.Bool(parse_output_bool()))
+                           vals=vals.Bool())
 
         self.add_parameter('measure',
                            get_cmd='SENS:DATA:FRES?',
