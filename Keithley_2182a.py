@@ -138,16 +138,15 @@ class Keithley_2182a(VisaInstrument):
                            get_parser=parse_output_string,
                            vals=vals.Enum('C', 'F', 'K'))
         
-        self.add_parameter('display_enable',
+        self.add_parameter('display',
                            get_cmd='DISP:ENAB',
                            set_cmd='DISP:ENAB {}',
-                           get_parser=parse_output_bool,
-                           set_parser=parse_input_bool,
-                           vals=vals.Bool())
+                           get_parser=int,
+                           vals=vals.Ints(0,1))
         self.add_parameter('beeper',
                            get_cmd='SYST:BEEP?',
                            set_cmd='SYST:BEEP {}',
-                           vals=vals.Enum(0,1))
+                           vals=vals.Ints(0,1))
 
         self.add_function('reset', call_cmd='*RST')
 
