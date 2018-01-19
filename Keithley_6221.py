@@ -45,8 +45,7 @@ class Keithley_6221(VisaInstrument):
         self.add_parameter('output',
                            get_cmd='OUTP:STAT?',
                            set_cmd='OUTP:STAT {}',
-                           get_parser=parse_output_bool,
-                           vals=vals.Bool())
+                           get_parser=int)
         
         if reset:
             self.reset()
