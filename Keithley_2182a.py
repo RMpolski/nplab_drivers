@@ -149,6 +149,7 @@ class Keithley_2182a(VisaInstrument):
                            vals=vals.Ints(0,1))
 
         self.add_function('reset', call_cmd='*RST')
+        self.add_function('last_error', call_cmd='STAT:QUE:NEXT?')
 
 
         if reset:
