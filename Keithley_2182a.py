@@ -116,7 +116,6 @@ class Keithley_2182a(VisaInstrument):
         self.add_parameter('line_sync',
                            get_cmd='SYST:LSYN?',
                            set_cmd='SYST:LSYN {}',
-                           vals=vals.Bool(),
                            get_parser=int,
                            vals=vals.Ints(0,1))
 
