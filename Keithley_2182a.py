@@ -1,363 +1,205 @@
-# Keithley_2182a.py driver for Keithley 2182a nanovoltmeter
-# NOT WORKING. IN DEVELOPMENT!
-# 
-# Robert Polski <polskirob@gmail.com>, 2018
-# Adapted from the Keithley_2700 driver provided by:
-# Pieter Eendebak <pieter.eendebak@gmail.com>, 2016 (adapt to Qcodes framework)
-# Pieter de Groot <pieterdegroot@gmail.com>, 2008
-# Martijn Schaafsma <qtlab@mcschaafsma.nl>, 2008
-# Reinier Heeres <reinier@heeres.eu>, 2008
-#
-# Update december 2009:
-# Michiel Jol <jelle@michieljol.nl>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jan 19 08:11:41 2018
 
-import logging
+Keithley_2182a attempt from scratch. Mostly derived from the Keithley_2600_channels script
+@author: robertpolski
+"""
+
+
+import numpy as np
+from typing import List, Dict, Union, Optional
 from functools import partial
 
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils.validators import Strings as StringValidator
-from qcodes.utils.validators import Ints as IntsValidator
-from qcodes.utils.validators import Numbers as NumbersValidator
+import qcodes as qc
+from qcodes import VisaInstrument
+import qcodes.utils.validators as vals
 
+def parse_output_string(s):
+    """ Parses and cleans string outputs of the Keithley """
+    # Remove surrounding whitespace and newline characters
+    s = s.strip()
 
-# %% Helper functions
+    # Remove surrounding quotes
+    if (s[0] == s[-1]) and s.startswith(("'", '"')):
+        s = s[1:-1]
 
+    #s = s.lower() #Try commenting this out. I don't like it much
 
-def bool_to_str(val):
-    '''
-    Function to convert boolean to 'ON' or 'OFF'
-    '''
-    if val:
-        return "ON"
+    # Convert some results to a better readable version
+    conversions = {
+        'mov': 'moving',
+        'rep': 'repeat',
+    }
+
+    if s.lower() in conversions.keys(): # To comment out line 28, changed here too
+        s = conversions[s]
+
+    return s
+
+def parse_output_bool(value):
+    if int(value) == 1:
+        return True
+    elif int(value) == 0:
+        return False
     else:
-        return "OFF"
+        raise ValueError('Must be boolean, 0 or 1, True or False')
 
-
-# %% Driver for Keithley_2700
-
-def parseint(v):
-    logging.debug('parseint: %s -> %d' % (v, int(v)))
-    return int(v)
-
-
-def parsebool(v):
-    r = bool(int(v))
-    logging.debug('parsetobool: %s -> %d' % (v, r))
-    return r
-
-
-def parsestr(v):
-    return v.strip().strip('"')
-
-
-class Keithley_2700(VisaInstrument):
-    '''
-    This is the qcodes driver for the Keithley_2700 Multimeter
-
-    Usage: Initialize with::
-
-        <name> =  = Keithley_2700(<name>, address='<GPIB address>', reset=<bool>,
-            change_display=<bool>, change_autozero=<bool>)
-
-    Status: beta-version.
-
-    This driver will most likely work for multiple Keithley SourceMeters.
-
-    This driver does not contain all commands available, but only the ones
-    most commonly used.
-    '''
-    def __init__(self, name, address, reset=False, **kwargs):
-        super().__init__(name, address, **kwargs)
-
-        self._modes = ['VOLT:AC', 'VOLT:DC', 'CURR:AC', 'CURR:DC', 'RES',
-                       'FRES', 'TEMP', 'FREQ']
-        # self._change_display = change_display
-        # self._change_autozero = change_autozero
-        self._averaging_types = ['MOV', 'REP']
-        self._trigger_sent = False
-
-        # Add parameters to wrapper
+class Keithley_2182a(VisaInstrument):
+    """
+    The Instrument driver for the Keithley 2182a nanovoltmeter
+    """
+    def __init__(self, name: str, address: str, reset: bool=False, **kwargs) -> None:
+        """
+        Args:
+            name: Name to use internally in QCoDeS
+            address: VISA ressource address
+            reset: Set Keithley to defaults? True or False
+        """
+        super().__init__(name, address, terminator='\n', **kwargs)
+        
+        # The limits of the range function. There's a separate function for
+        # autorange
+        self.vranges = [[0.01, 0.1, 1., 10., 100.], [0.1, 1, 10]]
+        self.tempranges = []
+        
         self.add_parameter('mode',
-                           get_cmd=':CONF?',
-                           get_parser=parsestr,
-                           set_cmd=':CONF:{}',
-                           vals=StringValidator())
-
-        self.add_parameter('trigger_count',
-                           get_cmd=self._mode_par('INIT', 'CONT'),
-                           get_parser=int,
-                           set_cmd=self._mode_par_value('INIT', 'CONT', '{}'),
-                           vals=IntsValidator(),
-                           unit='#')
-        self.add_parameter('trigger_delay',
-                           get_cmd=self._mode_par('TRIG', 'DEL'),
-                           get_parser=float,
-                           set_cmd=self._mode_par_value('TRIG', 'DEL', '{}'),
-                           vals=NumbersValidator(min_value=0,
-                                                 max_value=999999.999),
-                           unit='s')
-
-        self.add_parameter('trigger_continuous',
-                           get_cmd=self._mode_par('INIT', 'CONT'),
-                           get_parser=parsebool,
-                           set_cmd=self._mode_par_value('INIT', 'CONT', '{}'),
-                           set_parser=bool_to_str)
-        self.add_parameter('display',
-                           get_cmd=self._mode_par('DISP', 'ENAB'),
-                           get_parser=parsebool,
-                           set_cmd=self._mode_par_value('DISP', 'ENAB', '{}'),
-                           set_parser=bool_to_str)
-
-        self.add_parameter('averaging',
-                           get_cmd=partial(self._current_mode_get, 'AVER:STAT',
-                                           parser=parsebool),
-                           set_cmd=partial(self._current_mode_set,
-                                           par='AVER:STAT'),
-                           set_parser=bool_to_str)
-
-        self.add_parameter('digits',
-                           get_cmd=partial(self._current_mode_get, 'DIG',
-                                           parser=int),
-                           set_cmd=partial(self._current_mode_set, par='DIG'))
-
-        self.add_parameter('nplc',
-                           get_cmd=partial(self._current_mode_get, 'NPLC',
-                                           parser=float),
-                           set_cmd=partial(self._current_mode_set, par='NPLC',
-                                           mode=None),
-                           unit='APER',
-                           docstring=('Get integration time in Number of '
-                                      'PowerLine Cycles.\n'
-                                      'To get the integrationtime in seconds, '
-                                      'use get_integrationtime().'))
-
+                           get_cmd='SENS:FUNC?',
+                           set_cmd='SENS:FUNC {}',
+                           vals = vals.Enum('VOLT', 'TEMP'))
+        
+        self.add_parameter('channel',
+                           get_cmd='SENS:CHAN?',
+                           set_cmd='SENS:CHAN {}',
+                           vals=vals.Ints(0,2))
+        
         self.add_parameter('range',
-                           get_cmd=partial(self._current_mode_get, 'RANG',
-                                           parser=float),
-                           set_cmd=partial(self._current_mode_set, par='RANG'),
-                           unit='RANG',
-                           docstring=('Sets the measurement range.\n'
-                                      'Note that not only a discrete set of '
-                                      'ranges can be set (see the manual for '
-                                      'details).'))
+                           get_cmd=partial(self._get_mode_param, 'RANG',
+                                           float),
+                           set_cmd=partial(self._set_mode_param, 'RANG'),
+                           get_parser=float,
+                           vals=vals.Enum(*partial(self._mode_range)))
+        
+        self.add_parameter('auto_range_enabled',
+                           get_cmd=partial(self._get_mode_param, 'RANG:AUTO',
+                                           parse_output_bool),
+                           set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
+                           vals=vals.Bool())
+                           
+        self.add_parameter('measure',
+                           get_cmd='SENS:DATA:FRES?',
+                           get_parser=float,
+                           vals=vals.Numbers(),
+                           unit=self._get_unit())
+                           
+                           
+        self.add_parameter('digits',
+                           get_cmd=partial(self._get_mode_param, 'DIG', float),
+                           set_cmd=partial(self._set_mode_param, 'DIG'),
+                           vals=vals.Numbers(*partial(self._digit_range)))
+                           
+        
+        self.add_parameter('line_sync',
+                           get_cmd='SYST:LSYN?',
+                           set_cmd='SYST:LSYN {}',
+                           vals=vals.Bool(),
+                           get_parser=parse_output_bool,
+                           set_parser=int)
+        
+        self.add_parameter('front_autozero',
+                           get_cmd='SYST:FAZ?',
+                           set_cmd='SYST:FAZ {}',
+                           get_parser=parse_output_bool,
+                           set_parser=int,
+                           vals=vals.Bool())
+        
+        self.add_parameter('autozero',
+                           get_cmd='SYST:AZER?',
+                           set_cmd='SYST:AZER {}',
+                           get_parser=parse_output_bool,
+                           set_parser=int,
+                           vals=vals.Bool())
+        self.add_parameter('temp_unit',
+                           get_cmd='UNIT:TEMP?',
+                           set_cmd='UNIT:TEMP {}',
+                           get_parser=parse_output_string,
+                           vals=vals.Enum('C', 'F', 'K'))
+        
+        self.add_function('reset', call_cmd='*RST')
 
-        self.add_parameter('integrationtime',
-                           get_cmd=partial(self._current_mode_get, 'APER',
-                                           parser=float),
-                           set_cmd=partial(self._current_mode_set, par='APER',
-                                           mode=None),
-                           unit='s',
-                           vals=NumbersValidator(min_value=2e-4, max_value=1.),
-                           docstring=('Get integration time in seconds.\n'
-                                      'To get the integrationtime as a Number '
-                                      'of PowerLine Cycles, use get_nplc().'))
-
-        # add functions
-        self.add_parameter('amplitude',
-                           unit='arb.unit',
-                           label=name,
-                           get_cmd=':DATA:FRESH?',
-                           get_parser=float)
-        self.add_parameter('readnext',
-                           unit='arb.unit',
-                           label=name,
-                           get_cmd=':DATA:FRESH?',
-                           get_parser=float)
-
+        
         if reset:
             self.reset()
-        else:
-            self.get_all()
-            self.set_defaults()
-
+        
         self.connect_message()
-
-    def get_all(self):
-        '''
-        Reads all relevant parameters from instrument
-
-        Input:
-            None
-
-        Output:
-            None
-        '''
-        logging.info('Get all relevant data from device')
-
-        for p in ['mode', 'trigger_count', 'trigger_continuous', 'averaging',
-                  'digits', 'nplc', 'integrationtime', 'range', 'display']:
-            logging.debug('get %s' % p)
-            par = getattr(self, p)
-            par.get()
-
-        # self.get_trigger_delay()
-        # self.get_trigger_source()
-        # self.get_trigger_timer()
-        # self.get_autozero()
-        # self.get_averaging_window()
-        # self.get_averaging_count()
-        # self.get_averaging_type()
-        # self.get_autorange()
-
-    def _current_mode_get(self, par, mode=None, parser=None):
-        cmd = self._mode_par(mode, par)
-        r = self.ask(cmd)
-        if parser is not None:
-            r = parser(r)
-        return r
-
-    def _current_mode_set(self, value, par, mode=None):
-        cmd = self._mode_par_value(mode, par, value)
-        return self.write(cmd)
-
-    # --------------------------------------
-    #           functions
-    # --------------------------------------
-
-    def set_mode_volt_dc(self):
-        '''
-        Set mode to DC Voltage
-
-        Input:
-            None
-
-        Output:
-            None
-        '''
-        logging.debug('Set mode to DC Voltage')
-        self.mode.set('VOLT:DC')
-
-    def set_defaults(self):
-        '''
-        Set to driver defaults:
-        Output=data only
-        Mode=Volt:DC
-        Digits=7
-        Trigger=Continous
-        Range=10 V
-        NPLC=1
-        Averaging=off
-        '''
-
-        self.write('SYST:PRES')
-        self.write(':FORM:ELEM READ')
-        # Sets the format to only the read out, all options are:
-        # READing = DMM reading, UNITs = Units,
-        # TSTamp = Timestamp, RNUMber = Reading number,
-        # CHANnel = Channel number, LIMits = Limits reading
-
-        self.set_mode_volt_dc()
-        self.digits.set(7)
-        self.trigger_continuous.set(True)
-        self.range.set(10)
-        self.nplc.set(1)
-        self.averaging.set(False)
-        return
-
-    def _determine_mode(self, mode):
-        '''
-        Return the mode string to use.
-        If mode is None it will return the currently selected mode.
-        '''
-        logging.debug('Determine mode with mode=%s' % mode)
-        if mode is None:
-            mode = self.mode.get_latest()  # _mode(query=False)
-        if mode not in self._modes and mode not in ('INIT', 'TRIG', 'SYST',
-                                                    'DISP'):
-            logging.warning('Invalid mode %s, assuming current' % mode)
-            mode = self.mode.get_latest()
-        logging.debug('Determine mode: mode=%s' % mode)
-        return mode
-
-    def set_mode(self, mode):
-        '''
-        Set the mode to the specified value
-
-        Input:
-            mode (string) : mode to be set. Choose from self._modes
-
-        Output:
-            None
-        '''
-
-        logging.debug('Set mode to %s', mode)
-        if mode in self._modes:
-            string = ':CONF:%s' % mode
-            self._visainstrument.write(string)
-
-            if mode.startswith('VOLT'):
-                self._change_units('V')
-            elif mode.startswith('CURR'):
-                self._change_units('A')
-            elif mode.startswith('RES'):
-                self._change_units('Ohm')
-            elif mode.startswith('FREQ'):
-                self._change_units('Hz')
-
+        
+    def autocalibrate(self):
+        """Initializes calibration, asks if you want to continue, and 
+        does low-level calibration. It's recommended if the 
+        temperature difference is above 1 deg C.
+        Takes about 5 minutes if you continue"""
+        self.write('CAL:UNPR:ACAL:INIT')
+        prevtemp = parse_output_string(self.ask('CAL:UNPR:ACAL:TEMP?'))
+        currtemp = parse_output_string(self.ask('SENS:TEMP:RTEM?'))
+        
+        answer = input('The last time ACAL was run,'+
+                       'the temp was {} C\n'.format(prevtemp)+
+              'Now the temp is {} C\n'.format(currtemp)+
+              'Do you want to proceed with low-level calibration? [y/n] ')
+        b = answer == 'y' and parse_output_string(self.mode()) == 'volt'
+        b = b and float(parse_output_string(self.range())) == 0.01
+        if b:
+            self.write('CAL:UNPR:ACAL:STEP2')
+            self.write('CAL:UNPR:ACAL:DONE')
+        elif answer == 'n':
+            self.write('CAL:UNPR:ACAL:DONE')
         else:
-            logging.error('invalid mode %s' % mode)
+            print('Must be in voltage mode, range 10mV')
+            self.write('CAL:UNPR:ACAL:DONE')
+            
+        
+    def _get_mode_param(self, parameter: str, parser):
+        """ Read the current Keithley mode and ask for a parameter """
+        mode = parse_output_string(self.mode())
+        cmd = 'SENS:{}:{}?'.format(mode, parameter)
 
-        # Get all values again because some parameters depend on mode
-        self.get_all()
+        return parser(self.ask(cmd))
 
-    def _mode_par_value(self, mode, par, val):
-        '''
-        For internal use only!!
-        Create command string based on current mode
+    def _set_mode_param(self, parameter: str, value):
+        """ Read the current Keithley mode and set a parameter """
+        if isinstance(value, bool):
+            value = int(value)
 
-        Input:
-            mode (string) : The mode to use
-            par (string)  : Parameter
-            val (depends) : Value
-
-        Output:
-            None
-        '''
-        mode = self._determine_mode(mode)
-        string = ':%s:%s %s' % (mode, par, val)
-        return string
-
-    def _mode_par(self, mode, par):
-        '''
-        For internal use only!!
-        Create command string based on current mode
-
-        Input:
-            mode (string) : The mode to use
-            par (string)  : Parameter
-            val (depends) : Value
-
-        Output:
-            None
-        '''
-        mode = self._determine_mode(mode)
-        string = ':%s:%s?' % (mode, par, )
-        return string
-
-    def reset(self):
-        '''
-        Resets instrument to default values
-
-        Input:
-            None
-
-        Output:
-            None
-        '''
-        logging.debug('Resetting instrument')
-        self._visainstrument.write('*RST')
-        self.get_all()
+        mode = parse_output_string(self.mode())
+        cmd = 'SENS:{}:{} {}'.format(mode, parameter, value)
+        self.write(cmd)
+        
+    def _mode_range(self):
+        """ Returns the different range settings for a given mode """
+        if self.channel() == 0:
+            raise ValueError('Needs to be set on channel 1 or 2')
+        if self.mode() == 'VOLT':
+            return self.vranges[self.channel()-1]
+        elif self.mode() == 'TEMP':
+            return self.tempranges[self.channel()-1]
+        else:
+            raise ValueError('Not VOLT or TEMP in _mode_range')
+    
+    def _digit_range(self):
+        """ Feeds number of digit min and max to Enum validator"""
+        if self.mode() == 'VOLT':
+            return np.arange(3.5, 8, 0.5)
+        elif self.mode() == 'TEMP':
+            return np.arange(4, 8, 1)
+        else:
+            raise ValueError('Must be VOLT or TEMP in _digit_range')
+    
+    def _get_unit(self):
+        """ Returns the unit for the current measurement mode"""
+        if self.mode() == 'VOLT':
+            return 'V'
+        elif self.mode() == 'TEMP':
+            return self.ask('UNIT:TEMP?')
+        else:
+            raise ValueError('Mode must be VOLT or TEMP')
