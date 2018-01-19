@@ -147,9 +147,7 @@ class Keithley_2182a(VisaInstrument):
         self.add_parameter('beeper',
                            get_cmd='SYST:BEEP?',
                            set_cmd='SYST:BEEP {}',
-                           get_parser=parse_output_bool,
-                           set_parser=parse_input_bool,
-                           vals=vals.Bool())
+                           vals=vals.Enum(0,1))
 
         self.add_function('reset', call_cmd='*RST')
 
