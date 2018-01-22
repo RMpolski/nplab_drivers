@@ -44,7 +44,7 @@ class Keithley_6221(VisaInstrument):
         """
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        self.add_parameter('amplitude',
+        self.add_parameter('current',
                            get_cmd='SOUR:CURR?',
                            set_cmd='SOUR:CURR {}',
                            get_parser=float,
