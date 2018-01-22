@@ -34,7 +34,7 @@ class Keithley_6221(VisaInstrument):
     """
     Instrument Driver for Keithley 6221 current source
     """
-    
+
     def __init__(self, name: str, address: str, reset: bool=False, **kwargs) -> None:
         """
         Args:
@@ -43,13 +43,13 @@ class Keithley_6221(VisaInstrument):
             reset: Set Keithley to defaults? True or False
         """
         super().__init__(name, address, terminator='\n', **kwargs)
-        
+
         self.add_parameter('amplitude',
                            get_cmd='SOUR:CURR:LEV:IMM:AMPL?',
                            set_cmd='SOUR:CURR:LEV:IMM:AMPL {}',
                            get_parser=float,
                            vals=vals.Numbers())
-        
+
         self.add_parameter('output',
                            get_cmd='OUTP:STAT?',
                            set_cmd='OUTP:STAT {}',
@@ -70,10 +70,10 @@ class Keithley_6221(VisaInstrument):
                            set_cmd='SYST:BEEP {}',
                            get_parser=int,
                            vals=vals.Ints(0,1))
-        
+
+
         self.add_function('reset', call_cmd='*RST')
-        self.add_function('last_error', call_cmd='STAT:QUE:NEXT?')
-        
+
         if reset:
             self.reset()
 
