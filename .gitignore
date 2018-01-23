@@ -1,0 +1,11 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Mac files
+.DS_Store
+
+# Temporary files
+*.md~
+*.py~
+tmp/
