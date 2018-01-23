@@ -73,8 +73,8 @@ class Keithley_2182a(VisaInstrument):
 
         # The limits of the range function. There's a separate function for
         # autorange
-        self.vranges = [[0.01, 0.1, 1., 10., 100.], [0.1, 1, 10]]
-        self.tempranges = []
+        self.vranges = [[0.01, 0.1, 1., 10., 100.], [0.1, 1, 10]] # not used
+        self.tempranges = [] #not used at the moment
 
         self.add_parameter('mode',
                            get_cmd='SENS:FUNC?',
@@ -148,7 +148,7 @@ class Keithley_2182a(VisaInstrument):
                            vals=vals.Ints(0,1))
 
         self.add_function('reset', call_cmd='*RST')
-        self.add_function('last_error', call_cmd='STAT:QUE:NEXT?')
+        self.add_function('get_error', call_cmd='SYST:ERR?')
 
 
         if reset:
