@@ -18,7 +18,7 @@ import time
 
 class QDInstrument:
     """ The instrument class that calls on the PPMS through MultiVu. Don't
-    use these commands for QCoDeS.
+    use these commands for QCoDeS unless you want the error codes and status codes and such.
     It has the
     following functions:
         set_temperature(temp, rate, mode): returns error code. Mode 0 is fast settle.
