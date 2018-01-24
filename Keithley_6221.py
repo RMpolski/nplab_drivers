@@ -11,7 +11,7 @@ from typing import Union
 
 import qcodes as qc
 from qcodes import VisaInstrument
-from qcodes.instrument.parameter import ArrayParameter
+from qcodes.instrument.parameter import ArrayParameter, MultiParameter
 import qcodes.utils.validators as vals
 
 def parse_output_bool(value):
@@ -35,6 +35,23 @@ def parse_input_bool(value):
 class SweepParameter(ArrayParameter):
     """ Defines the parameters used for delta mode and delta differential
     conductance mode.
+
+    get_cmd: must be a function that outputs an array with the dimensions
+             given when setting up the parameter
+    """
+    def __init__(self, name: str, get_cmd=None, **kwargs):
+        super().__init__(name, **kwargs)
+        if get_cmd == None:
+            print('Needs get_cmd')
+        else:
+            self.get_cmd = get_cmd
+    def get(self):
+        # return the parameter by calling get_cmd
+        return self.get_cmd()
+    
+class SweepTimeParameter(MultiParameter):
+    """ Defines the parameters used for delta mode and delta differential
+    conductance mode, now with an added time array.
 
     get_cmd: must be a function that outputs an array with the dimensions
              given when setting up the parameter
@@ -207,7 +224,7 @@ class Keithley_6221(VisaInstrument):
                     _vals[int(i/2)] = _floatdata[i]
                 else:
                     _times[int((i-1)/2)] = _floatdata[i]
-            return np.transpose(np.column_stack((_vals, _times)))
+            return (_vals, _times)
         else:
             for i in range(len(_floatdata)):
                 if np.mod(i, 2) == 0:
@@ -350,13 +367,15 @@ class Keithley_6221(VisaInstrument):
 
         if timemeas: # untested timemeas
             countarray = np.linspace(1,len(self.sweep_current), len(self.sweep_current))
-            self.add_parameter('deltadcon', parameter_class=SweepParameter,
-                               label='dVdI/dIdV',
-                               shape=(2, self._delta_points),
-                               unit=self._dcon_unit,
-                               setpoints=((0, 1), (tuple(self.sweep_current), tuple(countarray))),
-                               setpoint_labels=('Current', 'Number'),
-                               setpoint_units=('A',''),
+            self.add_parameter('deltadcon', names=('dcon', 'time'),
+                               parameter_class=SweepTimeParameter,
+                               labels=('dVdI/dIdV', 'time'),
+                               shapes=((self._delta_points,), (self._delta_points,)),
+                               units=(self._dcon_unit, 's'),
+                               setpoints=((tuple(self.sweep_current),),(tuple(countarray),)),
+                               setpoint_names=(('current',), ('number',)),
+                               setpoint_labels=(('Current',), ('Number',)),
+                               setpoint_units=(('A',), ('',)),
                                get_cmd=self.delta_trigger_return)
             self._delta_time_meas = True
         else:
