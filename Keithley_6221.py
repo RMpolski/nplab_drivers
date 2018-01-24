@@ -7,8 +7,7 @@ Created on Fri Jan 19 13:32:00 2018
 """
 
 import numpy as np
-from typing import List, Dict, Union, Optional
-from functools import partial
+from typing import Union
 
 import qcodes as qc
 from qcodes import VisaInstrument

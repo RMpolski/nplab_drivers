@@ -9,7 +9,7 @@ Keithley_2182a attempt from scratch. Mostly derived from the Keithley_2600_chann
 
 
 import numpy as np
-from typing import List, Dict, Union, Optional
+from typing import Union, Optional
 from functools import partial
 
 import qcodes as qc
@@ -17,28 +17,9 @@ from qcodes import VisaInstrument
 import qcodes.utils.validators as vals
 
 def parse_output_string(s):
-    """ Parses and cleans string outputs of the Keithley """
-    # Remove surrounding whitespace and newline characters
-    s = s.strip()
-
-    # Remove surrounding quotes
-    if (s[0] == s[-1]) and s.startswith(("'", '"')):
-        s = s[1:-1]
-
-    #s = s.lower() #Try commenting this out. I don't like it much
-
-    # Convert some results to a better readable version
-    conversions = {
-        'mov': 'moving',
-        'rep': 'repeat',
-    }
-
-    if s.lower() in conversions.keys(): # To comment out line 28, changed here too
-        s = conversions[s]
-    
+    """ Used for mode parsing since Keithley 2812 adds an unnecessary :DC """
     if s[-3:] == ':DC':
         s = s[:-3]
-
     return s
 
 def parse_output_bool(value):
