@@ -33,6 +33,23 @@ def parse_input_bool(value):
     else:
         return False
 
+class SweepParameter(ArrayParameter):
+    """ Defines the parameters used for delta mode and delta differential
+    conductance mode.
+
+    get_cmd: must be a function that outputs an array with the dimensions
+             given when setting up the parameter
+    """
+    def __init__(self, name: str, get_cmd=None, **kwargs):
+        super().__init__(name, **kwargs)
+        if get_cmd == None:
+            print('Needs get_cmd')
+        else:
+            self.get_cmd = get_cmd
+    def get(self):
+        # return the parameter by calling get_cmd
+        return self.get_cmd()
+
 class Keithley_6221(VisaInstrument):
     """
     Instrument Driver for Keithley 6221 current source
@@ -48,7 +65,7 @@ class Keithley_6221(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter('current',
-                           label='Current (A)',
+                           label='Current',
                            get_cmd='SOUR:CURR?',
                            set_cmd='SOUR:CURR {}',
                            get_parser=float,
@@ -60,13 +77,41 @@ class Keithley_6221(VisaInstrument):
                            get_parser=int,
                            set_parser=parse_output_bool,
                            vals=vals.Ints(0,1))
+        self.add_parameter('range',
+                           get_cmd='CURR:RANG?',
+                           set_cmd='CURR:RANG {}',
+                           get_parser=float,
+                           unit='A',
+                           vals=vals.Numbers(-105e-3, 105e-3))
+        self.add_parameter('auto_range',
+                           get_cmd='CURR:RANG:AUTO?',
+                           set_cmd='CURR:RANG:AUTO {}',
+                           get_parser=int,
+                           vals=vals.Ints(0,1))
+        self.add_parameter('compliance',
+                           get_cmd='CURR:COMP?',
+                           set_cmd='CURR:COMP {}',
+                           unit='V',
+                           get_parser=float,
+                           vals=vals.Numbers(-.1, 105))
         self.add_parameter('delay',
+                           unit='s',
                            get_cmd='SOUR:DEL?',
                            set_cmd='SOUR:DEL {}',
                            get_parser=float,
                            vals=vals.Numbers(0.001, 999999.999))
+        self.add_parameter('filter',
+                           get_cmd='CURR:FILT?',
+                           set_cmd='CURR:FILT {}',
+                           get_parser=int,
+                           vals=vals.Ints(0,1))
+        self.add_parameter('speed',
+                           get_cmd='OUTP:RESP?',
+                           set_cmd='OUTP:RESP {}',
+                           get_parser=str,
+                           vals=vals.Enum('slow', 'fast', 'SLOW', 'FAST'))
         self.add_parameter('display',
-                           get_cmd='DISP:ENAB',
+                           get_cmd='DISP:ENAB?',
                            set_cmd='DISP:ENAB {}',
                            get_parser=int,
                            set_parser=parse_output_bool,
@@ -82,6 +127,7 @@ class Keithley_6221(VisaInstrument):
         self.add_parameter('unit',
                            get_cmd='UNIT?',
                            set_cmd='UNIT {}',
+                           get_parser=str,
                            vals=vals.Enum('V', 'ohms', 'OHMS', 'S', 'SIEM',
                                           'siem', 'siemens', 'SIEMENS'))
         self.add_parameter('k2182_present',
@@ -129,7 +175,7 @@ class Keithley_6221(VisaInstrument):
         The array is of shape (points, 2), where the first column is the
         time between the initial data point and the given data point, and
         the second column is the value"""
-        if self.delta_arm() != 1 or self.diff_arm() != 1:
+        if self.delta_arm() != 1 and self.diff_arm() != 1:
             print('Need to run a delta or differential conductance setup')
             return
 
@@ -152,7 +198,7 @@ class Keithley_6221(VisaInstrument):
 
         self.timeout(self._old_timeout)
 
-        _floatdata= np.fromstring(self.ask('TRAC:DATA'), sep=',')
+        _floatdata= np.fromstring(self.ask('TRAC:DATA?'), sep=',')
         _vals = np.zeros(int(len(_floatdata)/2))
 
         if self._delta_time_meas:
@@ -162,7 +208,7 @@ class Keithley_6221(VisaInstrument):
                     _vals[int(i/2)] = _floatdata[i]
                 else:
                     _times[int((i-1)/2)] = _floatdata[i]
-            return np.column_stack((_times, _vals))
+            return np.transpose(np.column_stack((_vals, _times)))
         else:
             for i in range(len(_floatdata)):
                 if np.mod(i, 2) == 0:
@@ -226,18 +272,21 @@ class Keithley_6221(VisaInstrument):
         if 'constdelta' in self.parameters:
             del self.parameters['constdelta']
 
-        if timemeas:
-            self.add_parameter('constdelta', parameter_class=ArrayParameter,
+        if timemeas: # untested timemeas
+            self.add_parameter('constdelta', parameter_class=SweepParameter,
                                shape=(points, 2),
-                               setpoints=(tuple(self.sweep_current)),
-                               setpoint_labels=('Current (A)'),
+                               unit='V', setpoints=(tuple(self.sweep_current),),
+                               setpoint_names=('Current', 'Time'),
+                               setpoint_units=('A', 's'),
                                get_cmd=self.delta_trigger_return)
             self._delta_time_meas = True
         else:
-            self.add_parameter('constdelta', parameter_class=ArrayParameter,
+            self.add_parameter('constdelta', parameter_class=SweepParameter,
+                               label='Voltage',
                                shape=(points,),
-                               setpoints=(tuple(self.sweep_current)),
-                               setpoint_labels=('Current (A)'),
+                               unit='V', setpoints=(tuple(self.sweep_current),),
+                               setpoint_names=('Current',),
+                               setpoint_units=('A',),
                                get_cmd=self.delta_trigger_return)
             self._delta_time_meas = False
 
@@ -275,40 +324,49 @@ class Keithley_6221(VisaInstrument):
             print('2182 is not connected properly through the RS-232 port')
             return
 
-        self.write('SOUR:DCON:START {}'.format(start))
+        self._dcon_unit = self.unit().lower()
+
+        self.write('SOUR:DCON:STAR {}'.format(start))
         self.write('SOUR:DCON:STOP {}'.format(stop))
         self.write('SOUR:DCON:STEP {}'.format(step))
-        self.write('SOUR:DCON:DELTA {}'.format(delta))
-        self.write('SOUR:DCOND:DEL {}'.format(delay))
+        self.write('SOUR:DCON:DELT {}'.format(delta))
+        self.write('SOUR:DCON:DEL {}'.format(delay))
 
         if cab:
-            self.write('SOUR:DCON:CAB 1')
+            self.write('SOUR:DCON:CAB ON')
         else:
-            self.write('SOUR:DCON: CAB 0')
+            self.write('SOUR:DCON:CAB OFF')
 
         #calculate number of points
-        self._delta_points = int(np.abs((stop-start)/step)) #provide a checker for if step is right
+        self._delta_points = int(round(np.abs((stop-start)/step)+1)) #provide a checker for if step is right
         self.write('TRAC:POIN {}'.format(self._delta_points))
 
-        self.write('SOUR:DCOND:ARM')
+        self.write('SOUR:DCON:ARM')
 
-        self.sweep_current = np.arange(start, stop, step)
+        self.sweep_current = np.linspace(start, stop, self._delta_points)
         self._delta_delay = delay
 
         if 'deltadcon' in self.parameters:
             del self.parameters['deltadcon']
 
-        if timemeas:
-            self.add_parameter('deltadcon', parameter_class=ArrayParameter,
-                               shape=(self._delta_points, 2),
-                               setpoints=(tuple(self.sweep_current)),
-                               setpoint_labels=('Current (A)'),
+        if timemeas: # untested timemeas
+            countarray = np.linspace(1,len(self.sweep_current), len(self.sweep_current))
+            self.add_parameter('deltadcon', parameter_class=SweepParameter,
+                               label='dVdI/dIdV',
+                               shape=(2, self._delta_points),
+                               unit=self._dcon_unit,
+                               setpoints=((0, 1), (tuple(self.sweep_current), tuple(countarray))),
+                               setpoint_labels=('Current', 'Number'),
+                               setpoint_units=('A',''),
                                get_cmd=self.delta_trigger_return)
             self._delta_time_meas = True
         else:
-            self.add_parameter('deltadcon', parameter_class=ArrayParameter,
+            self.add_parameter('deltadcon', parameter_class=SweepParameter,
+                               label='dVdI/dIdV',
                                shape=(self._delta_points,),
-                               setpoints=(tuple(self.sweep_current)),
-                               setpoint_labels=('Current (A)'),
+                               unit=self._dcon_unit,
+                               setpoints=(tuple(self.sweep_current),),
+                               setpoint_names=('Current',),
+                               setpoint_units=('A',),
                                get_cmd=self.delta_trigger_return)
             self._delta_time_meas = False

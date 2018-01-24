@@ -81,50 +81,44 @@ class Keithley_2182a(VisaInstrument):
                            set_cmd='SENS:FUNC {}',
                            get_parser=parse_output_string,
                            vals = vals.Enum('VOLT', 'TEMP'))
-
         self.add_parameter('channel',
                            get_cmd='SENS:CHAN?',
                            set_cmd='SENS:CHAN {}',
                            vals=vals.Ints(0,2))
-
         self.add_parameter('range',
+                           unit='V',
                            get_cmd=partial(self._get_mode_param_chan, 'RANG',
                                            float),
                            set_cmd=partial(self._set_mode_param_chan, 'RANG'),
                            get_parser=float,
                            vals=vals.Numbers(0, 120)) #connect to _mode_range through enum
-
-        self.add_parameter('auto_range_enabled',
+        self.add_parameter('auto_range',
                            get_cmd=partial(self._get_mode_param, 'RANG:AUTO',
                                            parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
+                           get_parser=int,
                            vals=vals.Ints(0,1))
-
         self.add_parameter('measure',
                            get_cmd='SENS:DATA:FRES?',
                            get_parser=float,
                            vals=vals.Numbers(),
                            unit='V') #change to pull from the measurement type
-
         self.add_parameter('nplc',
                            get_cmd=partial(self._get_mode_param, 'NPLC',
                                            float),
                            set_cmd=partial(self._set_mode_param, 'NPLC'),
                            get_parser=float,
                            vals=vals.Numbers(0.01,60))
-
         self.add_parameter('line_sync',
                            get_cmd='SYST:LSYN?',
                            set_cmd='SYST:LSYN {}',
                            get_parser=int,
                            vals=vals.Ints(0,1))
-
         self.add_parameter('front_autozero',
                            get_cmd='SYST:FAZ?',
                            set_cmd='SYST:FAZ {}',
                            get_parser=int,
                            vals=vals.Ints(0,1))
-
         self.add_parameter('autozero',
                            get_cmd='SYST:AZER?',
                            set_cmd='SYST:AZER {}',
@@ -136,9 +130,8 @@ class Keithley_2182a(VisaInstrument):
                            set_cmd='UNIT:TEMP {}',
                            get_parser=parse_output_string,
                            vals=vals.Enum('C', 'F', 'K'))
-        
         self.add_parameter('display',
-                           get_cmd='DISP:ENAB',
+                           get_cmd='DISP:ENAB?',
                            set_cmd='DISP:ENAB {}',
                            get_parser=int,
                            vals=vals.Ints(0,1))
