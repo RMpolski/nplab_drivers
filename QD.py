@@ -116,7 +116,7 @@ class QD_System(Instrument, QDInstrument):
         self.add_parameter('temperature',
                            unit='K',
                            get_cmd=self.temperature_get_cmd,
-                           set_cmd=self.ftemperature_set_stable,
+                           set_cmd=self.temperature_set_stable,
                            vals=vals.Numbers(1.7, 400))
         self.add_parameter('field',
                            unit='mT',
