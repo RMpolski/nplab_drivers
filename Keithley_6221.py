@@ -289,11 +289,16 @@ class Keithley_6221(VisaInstrument):
             del self.parameters['constdelta']
 
         if timemeas: # untested timemeas
-            self.add_parameter('constdelta', parameter_class=SweepParameter,
-                               shape=(points, 2),
-                               unit='V', setpoints=(tuple(self.sweep_current),),
-                               setpoint_names=('Current', 'Time'),
-                               setpoint_units=('A', 's'),
+            countarray = np.linspace(1,len(self.sweep_current), len(self.sweep_current))
+            self.add_parameter('constdelta', names=('deltaV', 'time'),
+                               parameter_class=SweepTimeParameter,
+                               labels=('Delta Mode Volgage', 'Time'),
+                               shapes=((self._delta_points,), (self._delta_points,)),
+                               units=('V', 's'),
+                               setpoints=((tuple(self.sweep_current),),(tuple(countarray),)),
+                               setpoint_names=(('current',), ('number',)),
+                               setpoint_labels=(('Current',), ('Number',)),
+                               setpoint_units=(('A',), ('',)),
                                get_cmd=self.delta_trigger_return)
             self._delta_time_meas = True
         else:
