@@ -104,7 +104,8 @@ class QDInstrument:
 
 class QD_System(Instrument, QDInstrument):
     """
-    The actual instrument class to be used by QCoDeS
+    The actual instrument class to be used by QCoDeS. Note: This uses mT units for magnetic field
+    instead of Oersteds.
     """
     def __init__(self, name: str, instrument_type='DYNACOOL',
                  **kwargs) -> None:
@@ -126,6 +127,7 @@ class QD_System(Instrument, QDInstrument):
 
         self.field_rate = 10 # Oe/s
         self.temperature_rate = 10 # K/s
+        print('Note this uses mT units for getting and setting fields with field(). Just divide Oe by 10 to get mT')
 
     def temperature_set_stable(self, temperature: Union[int, float],
                                slightlyfaster: bool=False):
