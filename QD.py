@@ -147,7 +147,7 @@ class QD_System(Instrument, QDInstrument):
                 if time.time() - startwaittime > timeout:
                     waiting = False
                     print('Temperature timeout')
-            qc.Wait(0.05)
+            qc.Wait(0.15)
         return
 
     def temperature_get_cmd(self):
