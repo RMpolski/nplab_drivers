@@ -125,13 +125,14 @@ class QD_System(Instrument, QDInstrument):
                            set_cmd=self.field_set_stable,
                            vals=vals.Numbers(-9000, 9000))
 
-        self.field_rate = 10 # Oe/s
+        self.field_rate = 1 # mT/s
         self.temperature_rate = 10 # K/s
         print('Note this uses mT units for getting and setting fields with field(). Just divide Oe by 10 to get mT')
 
     def temperature_set_stable(self, temperature: Union[int, float],
                                slightlyfaster: bool=False):
-        """ temperature:  in Kelvin"""
+        """ temperature:  in Kelvin. slightlyfaster=True just moves on when the temperature status
+        is near instead of requiring it to be stable"""
         err_init, temp_init, status_init = self.get_temperature()
         temp_init = float(temp_init)
         self.set_temperature(temperature, self.temperature_rate, 0)
@@ -149,7 +150,7 @@ class QD_System(Instrument, QDInstrument):
                 if time.time() - startwaittime > timeout:
                     waiting = False
                     print('Temperature timeout')
-            qc.Wait(0.15)
+            qc.Wait(0.2)
         return
 
     def temperature_get_cmd(self):
@@ -160,10 +161,10 @@ class QD_System(Instrument, QDInstrument):
         """ field: magnetic field in milliTesla"""
         err_init, bval_init, status_init = self.get_field()
         bval_init = float(bval_init)/10 #convert from Oe to mT
-        self.set_field(field*10, self.field_rate, 1, 0) #convert to Oe
+        self.set_field(field*10, self.field_rate*10, 1, 0) #convert to Oe
         waiting = True
         startwaittime = time.time()
-        timeout = (np.abs(bval_init-field))/(self.field_rate/10)*3 + 8 # in seconds
+        timeout = (np.abs(bval_init-field))/(self.field_rate)*3 + 120 # in seconds
         while waiting:
             err, bval, status = self.get_field()
             if status == 4:
@@ -172,7 +173,7 @@ class QD_System(Instrument, QDInstrument):
                 if time.time() - startwaittime > timeout:
                     waiting = False
                     print('Field timeout')
-            qc.Wait(0.1)
+            qc.Wait(0.2)
         return
 
     def field_get_cmd(self):
