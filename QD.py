@@ -157,8 +157,8 @@ class QD_System(Instrument, QDInstrument):
     def field_set_stable(self, field: Union[int,float]):
         """ field: magnetic field in milliTesla"""
         err_init, bval_init, status_init = self.get_field()
-        bval_init = float(bval_init)/10 #in mT
-        self.set_field(field, self.field_rate, 1, 0)
+        bval_init = float(bval_init)/10 #convert from Oe to mT
+        self.set_field(field*10, self.field_rate, 1, 0) #convert to Oe
         waiting = True
         startwaittime = time.time()
         timeout = (np.abs(bval_init-field))/(self.field_rate/10)*3 + 8 # in seconds
@@ -175,4 +175,4 @@ class QD_System(Instrument, QDInstrument):
 
     def field_get_cmd(self):
         err, bval, status = self.get_field()
-        return float(bval)
+        return float(bval/10) #convert from Oe
