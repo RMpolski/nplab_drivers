@@ -115,19 +115,32 @@ class QD_System(Instrument, QDInstrument):
         super().__init__(name, **kwargs)
 
         self.add_parameter('temperature',
+                           label='Temperature',
+                           unit='K',
+                           get_cmd=self.temperature_get_cmd,
+                           set_cmd=self.temperature_set_release,
+                           vals=vals.Numbers(1.7, 400))
+        self.add_parameter('temperature_set_stable',
+                           label='Temperature',
                            unit='K',
                            get_cmd=self.temperature_get_cmd,
                            set_cmd=self.temperature_set_stable,
                            vals=vals.Numbers(1.7, 400))
         self.add_parameter('field',
+                           label='Magnetic Field',
                            unit='mT',
+                           get_cmd=self.field_get_cmd,
+                           set_cmd=self.field_set_release,
+                           vals=vals.Numbers(-9000, 9000))
+        self.add_parameter('field_set_stable',
+                           label='Magnetic Field', unit='mT',
                            get_cmd=self.field_get_cmd,
                            set_cmd=self.field_set_stable,
                            vals=vals.Numbers(-9000, 9000))
 
         self.field_rate = 1 # mT/s
         self.temperature_rate = 10 # K/s
-        print('Note this uses mT units for getting and setting fields with field(). Just divide Oe by 10 to get mT')
+        print('Note this uses mT units for getting and setting fields with field() and field_set_stable(). Just divide Oe by 10 to get mT')
 
     def temperature_set_stable(self, temperature: Union[int, float],
                                slightlyfaster: bool=False):
@@ -153,6 +166,11 @@ class QD_System(Instrument, QDInstrument):
             qc.Wait(0.25)
         return
 
+    def temperature_set_release(self, temperature: Union[int, float]):
+        """ set temperature in Kelvin and don't wait until stable """
+        self.set_temperature(temperature, self.temperature_rate, 0)
+        return
+
     def temperature_get_cmd(self):
         err, temp, status = self.get_temperature()
         return float(temp)
@@ -175,6 +193,10 @@ class QD_System(Instrument, QDInstrument):
                     print('Field timeout')
             qc.Wait(0.25)
         return
+
+    def field_set_release(self, field: Union[int, float]):
+        """ field: magnetic field in milliTesla. Set and don't wait until stable """
+        self.set_field(field*10, self.field_rate*10, 1, 0) #convert to Oe
 
     def field_get_cmd(self):
         err, bval, status = self.get_field()
