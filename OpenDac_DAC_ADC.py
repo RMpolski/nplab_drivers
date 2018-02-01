@@ -37,8 +37,9 @@ def ch_convert(DAC_ADC, ch):
 
 def DAC_setvolt(ser, ch, volt):
     con_ch = ch_convert('DAC', ch)
-    ser.write('SET,'+ con_ch + ',' + str(volt) + '\r')
-    mes = ser.readline()
+    s = 'SET,'+ con_ch + ',' + str(volt) + '\r'
+    ser.write(s.encode('utf-8'))
+    mes = ser.readline().decode('utf-8')
     print(mes) #Perhaps should comment this out
     set_ch = mes.split(' ')[1]
     set_volt = mes.split(' ')[4].split('V')[0]
@@ -46,8 +47,9 @@ def DAC_setvolt(ser, ch, volt):
     
 def ADC_getvolt(ser, ch):
     con_ch = ch_convert('ADC', ch)
-    ser.write('GET_ADC,' + con_ch + '\r')
-    mes = ser.readline()
+    s = 'GET_ADC,' + con_ch + '\r'
+    ser.write(s.encode('utf-8'))
+    mes = ser.readline().decode('utf-8')
     return float(mes)
     
 ##########################################
@@ -90,7 +92,8 @@ class DAC_ADC(Instrument):
                            unit='V')
         self.add_parameter('ADC_3', get_cmd=partial(self.ADC_get, 3),
                            unit='V')
-        self.add_parameter('ADC_convert_time', set_cmd=self.ADC_ctime)
+        self.add_parameter('ADC_convert_time', set_cmd=self.ADC_setctime,
+                           unit='s')
         
         
         if reset:
@@ -104,7 +107,8 @@ class DAC_ADC(Instrument):
             ser.open()
         self._ser = ser
         print('Connected to ', self.address)
-        print(self.get_idn())
+        qc.Wait(2)
+        #print(self.get_idn())
 
     def reset(self):
         self.DAC_set('A', 0)
@@ -116,11 +120,10 @@ class DAC_ADC(Instrument):
         """ The idn for this instrument also comes from the *IDN command, but
         it needs a \r endline character, and it only returns the instrument
         name"""
-        try:
-            idstr = ''
-            self._ser.write('*IDN?\r')
-            idstr =  self._ser.readline()
-        except:
+        idstr = ''
+        self._ser.write('*IDN?\r'.encode('utf-8'))
+        idstr =  self._ser.readline().decode('utf-8')
+        if idstr == '':
             idstr = 'Not connected properly. Cannot find IDN'
         return idstr
 
