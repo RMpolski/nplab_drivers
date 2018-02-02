@@ -6,7 +6,7 @@ DAC_ADC driver for QCodes, modeled after the do_DAC_ADC driver for qtlab
 @author: robertpolski
 """
 
-import numpy as np
+
 import qcodes as qc
 from qcodes import Instrument
 import qcodes.utils.validators as vals
@@ -14,9 +14,12 @@ from qcodes.utils.helpers import strip_attrs
 from functools import partial
 import serial
 
-##### Helper functions ###########
+# Helper functions ##########################
+
 
 def ch_convert(DAC_ADC, ch):
+    """Converts from the written channel names to the internal
+    channel names according to the Arduino"""
     DAC_dict = {'A': '1',
                 'B': '3',
                 'C': '0',
@@ -37,30 +40,32 @@ def ch_convert(DAC_ADC, ch):
 
 def DAC_setvolt(ser, ch, volt):
     con_ch = ch_convert('DAC', ch)
-    s = 'SET,'+ con_ch + ',' + str(volt) + '\r'
+    s = 'SET,' + con_ch + ',' + str(volt) + '\r'
     ser.write(s.encode('utf-8'))
     mes = ser.readline().decode('utf-8')
-    print(mes) #Perhaps should comment this out
+    print(mes)  # Comment this out to remove printed statements
     set_ch = mes.split(' ')[1]
     set_volt = mes.split(' ')[4].split('V')[0]
-    return float(set_volt) #can include channel with , set_ch
-    
+    return float(set_volt)  # can include channel with , set_ch
+
+
 def ADC_getvolt(ser, ch):
     con_ch = ch_convert('ADC', ch)
     s = 'GET_ADC,' + con_ch + '\r'
     ser.write(s.encode('utf-8'))
     mes = ser.readline().decode('utf-8')
     return float(mes)
-    
+
+
 ##########################################
 
 class DAC_ADC(Instrument):
     """
-    Fill out this documentation string
+    The OpenDac DAC_ADC instrument. Initialize with
+    address: the address of the Arduino Due ('COM5', for example).
+    reset=True sets all DAC voltages to 0.
     """
-    
-    
-    def __init__(self, name, address, reset=False, **kwargs) -> None:
+    def __init__(self, name, address, reset=False, **kwargs):
         """
         Args:
             name: Name to use internally in QCoDeS
@@ -68,14 +73,14 @@ class DAC_ADC(Instrument):
             reset: Set all DAC values to 0? True or False
         """
         super().__init__(name, **kwargs)
-        
+
         self.address = address
         self._open_serial_connection()
         self.dac_vals = {'A': None,
                          'B': None,
                          'C': None,
                          'D': None}
-        
+
         self.add_parameter('DAC_A', set_cmd=partial(self.DAC_set, 'A'),
                            unit='V', vals=vals.Numbers(-10, 10))
         self.add_parameter('DAC_B', set_cmd=partial(self.DAC_set, 'B'),
@@ -94,12 +99,10 @@ class DAC_ADC(Instrument):
                            unit='V')
         self.add_parameter('ADC_convert_time', set_cmd=self.ADC_setctime,
                            unit='s')
-        
-        
+
         if reset:
             self.reset()
-        
-        
+
     def _open_serial_connection(self):
         ser = serial.Serial(self.address, 115200)
         print(ser.isOpen())
@@ -107,56 +110,55 @@ class DAC_ADC(Instrument):
             ser.open()
         self._ser = ser
         print('Connected to ', self.address)
-        qc.Wait(2)
-        #print(self.get_idn())
+        # print(self.get_idn())  # for some reason get_idn() doesn't work as
+        # the first command, but it works after using other commands.
+        # It doesn't work even after waiting like 2 seconds
 
     def reset(self):
+        """Set all DAC voltages to 0"""
         self.DAC_set('A', 0)
         self.DAC_set('B', 0)
         self.DAC_set('C', 0)
         self.DAC_set('D', 0)
-        
+
     def get_idn(self):
         """ The idn for this instrument also comes from the *IDN command, but
         it needs a \r endline character, and it only returns the instrument
         name"""
         idstr = ''
         self._ser.write('*IDN?\r'.encode('utf-8'))
-        idstr =  self._ser.readline().decode('utf-8')
+        idstr = self._ser.readline().decode('utf-8')
         if idstr == '':
             idstr = 'Not connected properly. Cannot find IDN'
         return idstr
 
-    def close(self) -> None:
-        """
-        Irreversibly stop this instrument and free its resources.
-        Closes the serial connection too
-        """
+    def close(self):
+        """Irreversibly stop this instrument and free its resources.
+        Closes the serial connection too"""
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
             self.connection.close()
-            
         ser = self._ser
         ser.close()
-    
+
         strip_attrs(self, whitelist=['name'])
         self.remove_instance(self)
-        
+
     def DAC_set(self, ch, volt):
         """ Sets the given DAC channel ch to voltage volt.
         ch can be an uppercase single-letter string from A to D"""
         dac_val = DAC_setvolt(self._ser, ch, volt)
         self.dac_vals[ch] = dac_val
-    
+
     def ADC_get(self, ch):
         """ Gets the current value in volts at the given ADC channel ch
         ch can be an integer from 0 to 3"""
         return ADC_getvolt(self._ser, ch)
-    
+
     def ADC_setctime(self, time: int):
         """ Sets the ADC convert time in microseconds.
         More time: less noise. Less time, more noise but faster"""
         self._ser.write('CONVERT_TIME,'+str(time)+'\r')
-        
+
     def if_ready(self):
         """ Returns True if DAC-ADC is ready for the next command and False
         if not"""
