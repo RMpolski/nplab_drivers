@@ -65,7 +65,7 @@ class DAC_ADC(Instrument):
     address: the address of the Arduino Due ('COM5', for example).
     reset=True sets all DAC voltages to 0.
     """
-    def __init__(self, name, address, reset=False, **kwargs):
+    def __init__(self, name, address, timeout=None, reset=False, **kwargs):
         """
         Args:
             name: Name to use internally in QCoDeS
@@ -75,7 +75,7 @@ class DAC_ADC(Instrument):
         super().__init__(name, **kwargs)
 
         self.address = address
-        self._open_serial_connection()
+        self._open_serial_connection(timeout)
         self.dac_vals = {'A': None,
                          'B': None,
                          'C': None,
@@ -103,8 +103,8 @@ class DAC_ADC(Instrument):
         if reset:
             self.reset()
 
-    def _open_serial_connection(self):
-        ser = serial.Serial(self.address, 115200)
+    def _open_serial_connection(self, timeout=None):
+        ser = serial.Serial(self.address, 115200, timeout)
         print(ser.isOpen())
         if not (ser.isOpen()):
             ser.open()

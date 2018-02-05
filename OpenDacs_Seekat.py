@@ -102,7 +102,7 @@ class Seekat(Instrument):
     reset=True sets all DAC voltages to 0.
     The parameters are called by name.ch#, where # is the channel (1-8)
     """
-    def __init__(self, name, address, reset=False, **kwargs):
+    def __init__(self, name, address, timeout=None, reset=False, **kwargs):
         """
         Args:
             name: Name to use internally in QCoDeS
@@ -112,7 +112,7 @@ class Seekat(Instrument):
         super().__init__(name, **kwargs)
 
         self.address = address
-        self._open_serial_connection()
+        self._open_serial_connection(timeout)
 
         # Set up parameters to be called by ch#, where # is the channel (1-8)
         for i in range(1, 9):
@@ -123,8 +123,8 @@ class Seekat(Instrument):
         if reset:
             self.reset()
 
-    def _open_serial_connection(self):
-            ser = serial.Serial(self.address, 9600)
+    def _open_serial_connection(self, timeout=None):
+            ser = serial.Serial(self.address, 9600, timeout=timeout)
             print(ser.isOpen())
             if not (ser.isOpen()):
                 ser.open()
