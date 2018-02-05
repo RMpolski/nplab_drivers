@@ -72,15 +72,15 @@ def get_volt(ser, ch):
     if ch_list[1]:
         ch_list[1] += 128
 
-    time.sleep(0.1)  # do we need these? Couldn't it be 0.02?
+    time.sleep(0.02)  # do we need these? Couldn't it be 0.02?
     ser.write([255, 254, 253, ch_list[0], 0, 0, ch_list[1], 0, 0])
-    time.sleep(0.1)
+    time.sleep(0.02)
     ser.write([255, 254, 253, ch_list[0], 0, 0, ch_list[1], 0, 0])
-    time.sleep(0.1)
+    time.sleep(0.02)
     ser.flush()
-    time.sleep(0.1)
+    time.sleep(0.02)
     ser.write([255, 254, 253, 0, 0, 0, 0, 0, 0])
-    time.sleep(.01)  # and this should be able to be 0.01
+    time.sleep(.1)  # and this should be able to be 0.01
 
     bdata = np.zeros(13)
     for i in range(0, 12):
