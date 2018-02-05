@@ -118,7 +118,7 @@ class Seekat(Instrument):
         for i in range(1, 9):
             self.add_parameter('ch'+str(i), set_cmd=partial(self.DAC_set, i),
                                get_cmd=partial(self.DAC_get, i),
-                               unit='V', vals=vals.Number(-10, 10))
+                               unit='V', vals=vals.Numbers(-10, 10))
 
         if reset:
             self.reset()
