@@ -80,7 +80,7 @@ def get_volt(ser, ch):
     ser.flush()
     time.sleep(0.02)
     ser.write([255, 254, 253, 0, 0, 0, 0, 0, 0])
-    time.sleep(.05)  # and this should be able to be 0.01
+    time.sleep(.08)  # and this should be able to be 0.01
 
     bdata = np.zeros(13)
     for i in range(0, 12):
