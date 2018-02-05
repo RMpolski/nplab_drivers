@@ -60,7 +60,7 @@ def set_volt(ser, ch, volt):
               d2*ch_list[2], ch_list[1], d1*ch_list[3],
               d2*ch_list[3]])
     ser.flush()
-    time.sleep(0.04)
+    time.sleep(0.05)
 
 
 def get_volt(ser, ch):
@@ -81,7 +81,7 @@ def get_volt(ser, ch):
     ser.flush()
     time.sleep(0.02)
     ser.write([255, 254, 253, 0, 0, 0, 0, 0, 0])
-    time.sleep(.05)  # and this should be able to be 0.01
+    time.sleep(0.05)  # and this should be able to be 0.01
 
     bdata = np.zeros(13)
     for i in range(0, 12):
