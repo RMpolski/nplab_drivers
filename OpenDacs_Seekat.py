@@ -64,7 +64,7 @@ def set_volt(ser, ch, volt):
 def get_volt(ser, ch):
     ch_list = ch_convert(ch)
 
-    ser.flushInput()
+    ser.reset_input_buffer()
     # Add to ch_list
     if ch_list[0]:
         ch_list[0] += 128
@@ -91,7 +91,7 @@ def get_volt(ser, ch):
     else:
         bdata3 = -10*(2**16 - bdata2)/2**15
 
-    ser.flushInput()
+    ser.reset_input_buffer()
     return bdata3
 
 
