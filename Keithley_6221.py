@@ -13,11 +13,13 @@ import qcodes as qc
 from qcodes import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter, MultiParameter
 import qcodes.utils.validators as vals
+import time
+
 
 def parse_output_bool(value):
     if int(value) == 1 or int(value) == 0:
         return int(value)
-    elif value == True or value == False:
+    elif value is True or value is False:
         return int(value)
     elif value == 'on' or value == 'ON':
         return 1
@@ -26,11 +28,13 @@ def parse_output_bool(value):
     else:
         raise ValueError('Must be boolean, 0 or 1, True or False')
 
+
 def parse_input_bool(value):
     if value:
         return True
     else:
         return False
+
 
 class SweepParameter(ArrayParameter):
     """ Defines the parameters used for delta mode and delta differential
@@ -41,14 +45,16 @@ class SweepParameter(ArrayParameter):
     """
     def __init__(self, name: str, get_cmd=None, **kwargs):
         super().__init__(name, **kwargs)
-        if get_cmd == None:
+        if get_cmd is None:
             print('Needs get_cmd')
         else:
             self.get_cmd = get_cmd
+
     def get(self):
         # return the parameter by calling get_cmd
         return self.get_cmd()
-    
+
+
 class SweepTimeParameter(MultiParameter):
     """ Defines the parameters used for delta mode and delta differential
     conductance mode, now with an added time array.
@@ -58,20 +64,22 @@ class SweepTimeParameter(MultiParameter):
     """
     def __init__(self, name: str, get_cmd=None, **kwargs):
         super().__init__(name, **kwargs)
-        if get_cmd == None:
+        if get_cmd is None:
             print('Needs get_cmd')
         else:
             self.get_cmd = get_cmd
+
     def get(self):
         # return the parameter by calling get_cmd
         return self.get_cmd()
+
 
 class Keithley_6221(VisaInstrument):
     """
     Instrument Driver for Keithley 6221 current source
     """
 
-    def __init__(self, name: str, address: str, reset: bool=False, **kwargs) -> None:
+    def __init__(self, name: str, address: str, reset: bool=False, **kwargs):
         """
         Args:
             name: Name to use internally in QCoDeS
@@ -92,7 +100,7 @@ class Keithley_6221(VisaInstrument):
                            set_cmd='OUTP:STAT {}',
                            get_parser=int,
                            set_parser=parse_output_bool,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
         self.add_parameter('range',
                            get_cmd='CURR:RANG?',
                            set_cmd='CURR:RANG {}',
@@ -103,7 +111,7 @@ class Keithley_6221(VisaInstrument):
                            get_cmd='CURR:RANG:AUTO?',
                            set_cmd='CURR:RANG:AUTO {}',
                            get_parser=int,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
         self.add_parameter('compliance',
                            get_cmd='CURR:COMP?',
                            set_cmd='CURR:COMP {}',
@@ -120,7 +128,7 @@ class Keithley_6221(VisaInstrument):
                            get_cmd='CURR:FILT?',
                            set_cmd='CURR:FILT {}',
                            get_parser=int,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
         self.add_parameter('speed',
                            get_cmd='OUTP:RESP?',
                            set_cmd='OUTP:RESP {}',
@@ -131,13 +139,13 @@ class Keithley_6221(VisaInstrument):
                            set_cmd='DISP:ENAB {}',
                            get_parser=int,
                            set_parser=parse_output_bool,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
         self.add_parameter('beeper',
                            get_cmd='SYST:BEEP?',
                            set_cmd='SYST:BEEP {}',
                            get_parser=int,
                            set_parser=parse_output_bool,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
 
         # Related to attached 2182(a) nanovoltmeter
         self.add_parameter('unit',
@@ -155,26 +163,25 @@ class Keithley_6221(VisaInstrument):
         self.add_parameter('diff_arm',
                            get_cmd='SOUR:DCON:ARM?',
                            get_parser=int)
-        #The following are only settable for now
+        # The following are only settable for now
         self.add_parameter('k2_range',
                            set_cmd='SYST:COMM:SER:SEND "VOLT:RANG {}"',
-                           vals=vals.Numbers(0,120))
+                           vals=vals.Numbers(0, 120))
         self.add_parameter('k2_nplc',
                            set_cmd='SYST:COMM:SER:SEND "VOLT:NPLC {}"',
-                           vals=vals.Numbers(0.01,60))
+                           vals=vals.Numbers(0.01, 60))
         self.add_parameter('k2_line_sync',
                            set_cmd='SYST:COMM:SER:SEND "SYST:LSYN {}"',
                            set_parser=int,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
         self.add_parameter('k2_front_autozero',
                            set_cmd='SYST:COMM:SER:SEND "SYST:FAZ {}"',
                            set_parser=int,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
         self.add_parameter('k2_autozero',
                            set_cmd='SYST:COMM:SER:SEND "SYST:AZER {}"',
                            set_parser=int,
-                           vals=vals.Ints(0,1))
-
+                           vals=vals.Ints(0, 1))
 
         self.add_function('abort_arm', call_cmd='SOUR:SWE:ABOR')
         self.add_function('reset', call_cmd='*RST')
@@ -197,7 +204,7 @@ class Keithley_6221(VisaInstrument):
 
         self.write('INIT:IMM')
 
-        qc.Wait(self._delta_delay*self._delta_points)
+        time.sleep(self._delta_delay*self._delta_points)
         # reset the timeout to account for possible extra time
         self._old_timeout = self.timeout()
         if self._delta_points/2 > 5:
@@ -205,8 +212,8 @@ class Keithley_6221(VisaInstrument):
         else:
             self.timeout(5)
         count = 0
-        while not int(self.ask('*OPC?')):# Wait until done. Try if this works...
-            qc.Wait(1)
+        while not int(self.ask('*OPC?')):  # Wait until done. Try if this works
+            time.sleep(1)
             if count > 5:
                 print('Delta function did not appear to finish')
                 break
@@ -214,7 +221,7 @@ class Keithley_6221(VisaInstrument):
 
         self.timeout(self._old_timeout)
 
-        _floatdata= np.fromstring(self.ask('TRAC:DATA?'), sep=',')
+        _floatdata = np.fromstring(self.ask('TRAC:DATA?'), sep=',')
         _vals = np.zeros(int(len(_floatdata)/2))
 
         if self._delta_time_meas:
@@ -231,10 +238,9 @@ class Keithley_6221(VisaInstrument):
                     _vals[int(i/2)] = _floatdata[i]
             return _vals
 
-
     def const_delta_setup(self, high: Union[int, float], points: int, delay=0,
-                        low: Union[int, float, None]=None, cab: bool=False,
-                        timemeas: bool=False) -> None:
+                          low: Union[int, float, None]=None, cab: bool=False,
+                          timemeas: bool=False):
         """ Sets up (doesn't run yet) the 6221 and 2182(a) into Delta mode
         in which the 6221 current source starts with a current at high (Amps)
         then to low (A) and back, and so on for "points" number of data
@@ -266,7 +272,7 @@ class Keithley_6221(VisaInstrument):
 
         self.write('SOUR:DELT:HIGH {}'.format(high))
 
-        if low != None:
+        if low is not None:
             self.write('SOUR:DELT:LOW {}'.format(low))
         else:
             low = -high
@@ -288,8 +294,9 @@ class Keithley_6221(VisaInstrument):
         if 'constdelta' in self.parameters:
             del self.parameters['constdelta']
 
-        if timemeas: # untested timemeas
-            countarray = np.linspace(1,len(self.sweep_current), len(self.sweep_current))
+        if timemeas:  # untested timemeas
+            countarray = np.linspace(1, len(self.sweep_current),
+                                     len(self.sweep_current))
             self.add_parameter('constdelta', names=('deltaV', 'time'),
                                parameter_class=SweepTimeParameter,
                                labels=('Delta Mode Volgage', 'Time'),
@@ -313,7 +320,7 @@ class Keithley_6221(VisaInstrument):
 
     def delta_diff_setup(self, start: Union[int, float], stop: Union[int, float],
                          step: Union[int, float], delta: Union[int, float]=1e-6,
-                         delay=0, cab: bool=False, timemeas: bool=False) -> None:
+                         delay=0, cab: bool=False, timemeas: bool=False):
         """ Sets up (doesn't run yet) the 6221 and 2182(a) into Delta
         differential conductance mode. The unit can be configured with .unit().
         The 6221 current source alternates and sweeps from start to end, with
@@ -358,7 +365,7 @@ class Keithley_6221(VisaInstrument):
         else:
             self.write('SOUR:DCON:CAB OFF')
 
-        #calculate number of points
+        # calculate number of points
         self._delta_points = int(round(np.abs((stop-start)/step)+1)) #provide a checker for if step is right
         self.write('TRAC:POIN {}'.format(self._delta_points))
 
@@ -370,7 +377,7 @@ class Keithley_6221(VisaInstrument):
         if 'deltadcon' in self.parameters:
             del self.parameters['deltadcon']
 
-        if timemeas: # untested timemeas
+        if timemeas:  # untested timemeas
             countarray = np.linspace(1,len(self.sweep_current), len(self.sweep_current))
             self.add_parameter('deltadcon', names=('dcon', 'time'),
                                parameter_class=SweepTimeParameter,

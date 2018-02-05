@@ -14,6 +14,7 @@ import qcodes.utils.validators as vals
 from qcodes.utils.helpers import strip_attrs
 from functools import partial
 import serial
+import time
 
 # Helper functions ##########################
 
@@ -49,11 +50,11 @@ def set_volt(ser, ch, volt):
     if int(dec16) == 2**16:
         dec16 = 0
 
-    # qc.Wait(1)  # do we need these?
+    # time.sleep(1)  # do we need these?
     bin16 = str(bin(int(dec16))[2:]).zfill(16)  # 16 bit binary
     d1 = int(bin16[:8], 2)  # first 8 bits
     d2 = int(bin16[8:17], 2)  # second 8 bits
-    qc.Wait(0.005)  # do we need these?
+    time.sleep(0.005)  # do we need these?
 
     ser.write([255, 254, 253, ch_list[0], d1*ch_list[2],
               d2*ch_list[2], ch_list[1], d1*ch_list[3],
@@ -71,15 +72,15 @@ def get_volt(ser, ch):
     if ch_list[1]:
         ch_list[1] += 128
     print(ch_list)
-    qc.Wait(0.2)  # do we need these? Couldn't it be 0.02?
+    time.sleep(0.02)  # do we need these? Couldn't it be 0.02?
     ser.write([255, 254, 253, ch_list[0], 0, 0, ch_list[1], 0, 0])
-    qc.Wait(0.2)
+    time.sleep(0.02)
     ser.write([255, 254, 253, ch_list[0], 0, 0, ch_list[1], 0, 0])
-    qc.Wait(0.2)
+    time.sleep(0.02)
     ser.flush()
-    qc.Wait(0.2)
+    time.sleep(0.02)
     ser.write([255, 254, 253, 0, 0, 0, 0, 0, 0])
-    qc.Wait(1)  # and this should be able to be 0.01
+    time.sleep(.01)  # and this should be able to be 0.01
 
     bdata = np.zeros(13)
     for i in range(0, 12):
