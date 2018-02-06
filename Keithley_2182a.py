@@ -3,18 +3,18 @@
 """
 Created on Fri Jan 19 08:11:41 2018
 
-Keithley_2182a attempt from scratch. Mostly derived from the Keithley_2600_channels script
+Keithley_2182a attempt from scratch. Mostly derived from the
+Keithley_2600_channels script. Some from Keithley_2000
 @author: robertpolski
 """
 
 
 import numpy as np
-from typing import Union, Optional
 from functools import partial
 
-import qcodes as qc
 from qcodes import VisaInstrument
 import qcodes.utils.validators as vals
+
 
 def parse_output_string(s):
     """ Used for mode parsing since Keithley 2812 adds an unnecessary :DC """
@@ -22,15 +22,17 @@ def parse_output_string(s):
         s = s[:-3]
     return s
 
+
 def parse_output_bool(value):
     if int(value) == 1:
         return True
     elif int(value) == 0:
         return False
-    elif value == True or value == False:
+    elif value is True or value is False:
         return value
     else:
         raise ValueError('Must be boolean, 0 or 1, True or False')
+
 
 def parse_input_bool(value):
     if value:
@@ -38,12 +40,12 @@ def parse_input_bool(value):
     else:
         return False
 
-#%%
+
 class Keithley_2182a(VisaInstrument):
     """
     The Instrument driver for the Keithley 2182a nanovoltmeter
     """
-    def __init__(self, name: str, address: str, reset: bool=False, **kwargs) -> None:
+    def __init__(self, name: str, address: str, reset: bool=False, **kwargs):
         """
         Args:
             name: Name to use internally in QCoDeS
@@ -54,58 +56,61 @@ class Keithley_2182a(VisaInstrument):
 
         # The limits of the range function. There's a separate function for
         # autorange
-        self.vranges = [[0.01, 0.1, 1., 10., 100.], [0.1, 1, 10]] # not used
-        self.tempranges = [] #not used at the moment
+        self.vranges = [[0.01, 0.1, 1., 10., 100.], [0.1, 1, 10]]  # not used
+        self.tempranges = []  # not used at the moment
 
         self.add_parameter('mode',
                            get_cmd='SENS:FUNC?',
                            set_cmd='SENS:FUNC {}',
                            get_parser=parse_output_string,
-                           vals = vals.Enum('VOLT', 'TEMP'))
+                           vals=vals.Enum('VOLT', 'TEMP'))
         self.add_parameter('channel',
                            get_cmd='SENS:CHAN?',
                            set_cmd='SENS:CHAN {}',
-                           vals=vals.Ints(0,2))
+                           vals=vals.Ints(0, 2))
+        # TODO: Possibly connect range to _mode_range through an enum to
+        # distinguish between temp and voltage modes.
         self.add_parameter('range',
                            unit='V',
                            get_cmd=partial(self._get_mode_param_chan, 'RANG',
                                            float),
                            set_cmd=partial(self._set_mode_param_chan, 'RANG'),
                            get_parser=float,
-                           vals=vals.Numbers(0, 120)) #connect to _mode_range through enum
+                           vals=vals.Numbers(0, 120))
         self.add_parameter('auto_range',
                            get_cmd=partial(self._get_mode_param, 'RANG:AUTO',
                                            parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
                            get_parser=int,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
+# TODO: Change measure to get unit from the measurement type
         self.add_parameter('measure',
                            get_cmd='SENS:DATA:FRES?',
                            get_parser=float,
                            vals=vals.Numbers(),
-                           unit='V') #change to pull from the measurement type
+                           unit='V')
         self.add_parameter('nplc',
                            get_cmd=partial(self._get_mode_param, 'NPLC',
                                            float),
                            set_cmd=partial(self._set_mode_param, 'NPLC'),
                            get_parser=float,
-                           vals=vals.Numbers(0.01,60))
+                           vals=vals.Numbers(0.01, 60))
         self.add_parameter('line_sync',
                            get_cmd='SYST:LSYN?',
                            set_cmd='SYST:LSYN {}',
                            get_parser=int,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
         self.add_parameter('front_autozero',
                            get_cmd='SYST:FAZ?',
                            set_cmd='SYST:FAZ {}',
                            get_parser=int,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
         self.add_parameter('autozero',
                            get_cmd='SYST:AZER?',
                            set_cmd='SYST:AZER {}',
                            get_parser=parse_output_bool,
                            set_parser=int,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
         self.add_parameter('temp_unit',
                            get_cmd='UNIT:TEMP?',
                            set_cmd='UNIT:TEMP {}',
@@ -115,15 +120,14 @@ class Keithley_2182a(VisaInstrument):
                            get_cmd='DISP:ENAB?',
                            set_cmd='DISP:ENAB {}',
                            get_parser=int,
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
         self.add_parameter('beeper',
                            get_cmd='SYST:BEEP?',
                            set_cmd='SYST:BEEP {}',
-                           vals=vals.Ints(0,1))
+                           vals=vals.Ints(0, 1))
 
         self.add_function('reset', call_cmd='*RST')
         self.add_function('get_error', call_cmd='SYST:ERR?')
-
 
         if reset:
             self.reset()
@@ -139,10 +143,11 @@ class Keithley_2182a(VisaInstrument):
         prevtemp = parse_output_string(self.ask('CAL:UNPR:ACAL:TEMP?'))
         currtemp = parse_output_string(self.ask('SENS:TEMP:RTEM?'))
 
-        answer = input('The last time ACAL was run,'+
-                       'the temp was {} C\n'.format(prevtemp)+
-              'Now the temp is {} C\n'.format(currtemp)+
-              'Do you want to proceed with low-level calibration? [y/n] ')
+        answer = input('The last time ACAL was run,' +
+                       'the temp was {} C\n'.format(prevtemp) +
+                       'Now the temp is {} C\n'.format(currtemp) +
+                       'Do you want to proceed with low-level calibration?' +
+                       ' [y/n] ')
         b = answer == 'y' and parse_output_string(self.mode()) == 'volt'
         b = b and float(parse_output_string(self.range())) == 0.01
         if b:
@@ -154,7 +159,6 @@ class Keithley_2182a(VisaInstrument):
             print('Must be in voltage mode, range 10mV')
             self.write('CAL:UNPR:ACAL:DONE')
 
-
     def _get_mode_param(self, parameter: str, parser):
         """ Read the current Keithley mode and ask for a parameter """
         mode = parse_output_string(self.mode())
@@ -165,7 +169,7 @@ class Keithley_2182a(VisaInstrument):
     def _get_mode_param_chan(self, parameter: str, parser, chan=None):
         """ Read the current Keithley mode and ask for a parameter """
         mode = parse_output_string(self.mode())
-        if chan == None:
+        if chan is None:
             chan = parse_output_string(self.channel())
         cstring = 'CHAN{}'.format(chan)
         cmd = 'SENS:{}:{}:{}?'.format(mode, cstring, parameter)
@@ -187,7 +191,7 @@ class Keithley_2182a(VisaInstrument):
             value = int(value)
 
         mode = parse_output_string(self.mode())
-        if chan == None:
+        if chan is None:
             chan = parse_output_string(self.channel())
         cstring = 'CHAN{}'.format(chan)
         cmd = 'SENS:{}:{}:{} {}'.format(mode, cstring, parameter, value)

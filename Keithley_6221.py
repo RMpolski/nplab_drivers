@@ -9,7 +9,6 @@ Created on Fri Jan 19 13:32:00 2018
 import numpy as np
 from typing import Union
 
-import qcodes as qc
 from qcodes import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter, MultiParameter
 import qcodes.utils.validators as vals
@@ -185,7 +184,7 @@ class Keithley_6221(VisaInstrument):
 
         self.add_function('abort_arm', call_cmd='SOUR:SWE:ABOR')
         self.add_function('reset', call_cmd='*RST')
-        self.add_function('get_error', call_cmd='SYST:ERR?')
+        self.add_function('get_error', call_cmd='SYST:ERR?')  # doesn't work
 
         if reset:
             self.reset()

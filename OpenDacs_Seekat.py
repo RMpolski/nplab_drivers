@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jan 30 16:38:38 2018
+Last edited Feb 5, 2018
 DAC_ADC driver for QCodes, modeled after the do_DAC_ADC driver for qtlab
 @author: robertpolski
 """
@@ -100,11 +100,13 @@ def get_volt(ser, ch):
 class Seekat(Instrument):
     """
     The OpenDac Seekat DAC instrument. Initialize with
-    address: the address of the Arduino Uno ('COM5', for example).
+    address: the address of the Arduino Uno ('COM3', for example).
     reset=True sets all DAC voltages to 0.
-    The parameters are called by name.ch#, where # is the channel (1-8)
+    The parameters are called by name.ch#, where # is the channel (1-8).
+    timeout is the Arduino's serial connection timeout
     """
-    def __init__(self, name, address, timeout=None, reset=False, **kwargs):
+    def __init__(self, name: str, address: str, timeout=None,
+                 reset: bool=False, **kwargs):
         """
         Args:
             name: Name to use internally in QCoDeS

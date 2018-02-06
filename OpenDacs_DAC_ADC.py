@@ -63,13 +63,15 @@ class DAC_ADC(Instrument):
     """
     The OpenDac DAC_ADC instrument. Initialize with
     address: the address of the Arduino Due ('COM5', for example).
-    reset=True sets all DAC voltages to 0.
+    reset=True sets all DAC voltages to 0. Timout is the arduino's timeout
     """
-    def __init__(self, name, address, timeout=None, reset=False, **kwargs):
+    def __init__(self, name: str, address: str, timeout=None,
+                 reset: bool=False, **kwargs):
         """
         Args:
             name: Name to use internally in QCoDeS
             address: VISA resource address
+            timeout: Serial connection timeout
             reset: Set all DAC values to 0? True or False
         """
         super().__init__(name, **kwargs)
