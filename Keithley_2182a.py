@@ -23,7 +23,7 @@ def parse_output_string(s):
     return s
 
 
-boolcheck = (0, 1, 'on', 'off', 'ON', 'OFF')
+boolcheck = (0, 1, 'on', 'off', 'ON', 'OFF', False, True)
 
 
 def parse_output_bool(value):

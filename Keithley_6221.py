@@ -14,7 +14,7 @@ from qcodes.instrument.parameter import ArrayParameter, MultiParameter
 import qcodes.utils.validators as vals
 import time
 
-boolcheck = (0, 1, 'on', 'off', 'ON', 'OFF')
+boolcheck = (0, 1, 'on', 'off', 'ON', 'OFF', False, True)
 
 
 def parse_output_bool(value):
