@@ -8,7 +8,6 @@ DAC_ADC driver for QCodes, modeled after the do_DAC_ADC driver for qtlab
 
 
 import numpy as np
-import qcodes as qc
 from qcodes import Instrument
 import qcodes.utils.validators as vals
 from qcodes.utils.helpers import strip_attrs

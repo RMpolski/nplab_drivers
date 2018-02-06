@@ -14,6 +14,8 @@ from qcodes.instrument.parameter import ArrayParameter, MultiParameter
 import qcodes.utils.validators as vals
 import time
 
+boolcheck = (0, 1, 'on', 'off', 'ON', 'OFF')
+
 
 def parse_output_bool(value):
     if int(value) == 1 or int(value) == 0:
@@ -26,13 +28,6 @@ def parse_output_bool(value):
         return 0
     else:
         raise ValueError('Must be boolean, 0 or 1, True or False')
-
-
-def parse_input_bool(value):
-    if value:
-        return True
-    else:
-        return False
 
 
 class SweepParameter(ArrayParameter):
@@ -60,6 +55,9 @@ class SweepTimeParameter(MultiParameter):
 
     get_cmd: must be a function that outputs an array with the dimensions
              given when setting up the parameter
+
+    This parameter is meant for when multiple types of data are collected from
+    the buffer, such as voltage and time
     """
     def __init__(self, name: str, get_cmd=None, **kwargs):
         super().__init__(name, **kwargs)
@@ -77,7 +75,6 @@ class Keithley_6221(VisaInstrument):
     """
     Instrument Driver for Keithley 6221 current source
     """
-
     def __init__(self, name: str, address: str, reset: bool=False, **kwargs):
         """
         Args:
@@ -99,7 +96,7 @@ class Keithley_6221(VisaInstrument):
                            set_cmd='OUTP:STAT {}',
                            get_parser=int,
                            set_parser=parse_output_bool,
-                           vals=vals.Ints(0, 1))
+                           vals=vals.Enum(*boolcheck))
         self.add_parameter('range',
                            get_cmd='CURR:RANG?',
                            set_cmd='CURR:RANG {}',
@@ -110,7 +107,8 @@ class Keithley_6221(VisaInstrument):
                            get_cmd='CURR:RANG:AUTO?',
                            set_cmd='CURR:RANG:AUTO {}',
                            get_parser=int,
-                           vals=vals.Ints(0, 1))
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
         self.add_parameter('compliance',
                            get_cmd='CURR:COMP?',
                            set_cmd='CURR:COMP {}',
@@ -127,7 +125,8 @@ class Keithley_6221(VisaInstrument):
                            get_cmd='CURR:FILT?',
                            set_cmd='CURR:FILT {}',
                            get_parser=int,
-                           vals=vals.Ints(0, 1))
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
         self.add_parameter('speed',
                            get_cmd='OUTP:RESP?',
                            set_cmd='OUTP:RESP {}',
@@ -138,13 +137,13 @@ class Keithley_6221(VisaInstrument):
                            set_cmd='DISP:ENAB {}',
                            get_parser=int,
                            set_parser=parse_output_bool,
-                           vals=vals.Ints(0, 1))
+                           vals=vals.Enum(*boolcheck))
         self.add_parameter('beeper',
                            get_cmd='SYST:BEEP?',
                            set_cmd='SYST:BEEP {}',
                            get_parser=int,
                            set_parser=parse_output_bool,
-                           vals=vals.Ints(0, 1))
+                           vals=vals.Enum(*boolcheck))
 
         # Related to attached 2182(a) nanovoltmeter
         self.add_parameter('unit',
@@ -163,6 +162,8 @@ class Keithley_6221(VisaInstrument):
                            get_cmd='SOUR:DCON:ARM?',
                            get_parser=int)
         # The following are only settable for now
+        # TODO: find a way to change the visa read command to
+        # SYST:COMM:SER:ENT?
         self.add_parameter('k2_range',
                            set_cmd='SYST:COMM:SER:SEND "VOLT:RANG {}"',
                            vals=vals.Numbers(0, 120))
@@ -171,16 +172,16 @@ class Keithley_6221(VisaInstrument):
                            vals=vals.Numbers(0.01, 60))
         self.add_parameter('k2_line_sync',
                            set_cmd='SYST:COMM:SER:SEND "SYST:LSYN {}"',
-                           set_parser=int,
-                           vals=vals.Ints(0, 1))
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
         self.add_parameter('k2_front_autozero',
                            set_cmd='SYST:COMM:SER:SEND "SYST:FAZ {}"',
-                           set_parser=int,
-                           vals=vals.Ints(0, 1))
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
         self.add_parameter('k2_autozero',
                            set_cmd='SYST:COMM:SER:SEND "SYST:AZER {}"',
-                           set_parser=int,
-                           vals=vals.Ints(0, 1))
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
 
         self.add_function('abort_arm', call_cmd='SOUR:SWE:ABOR')
         self.add_function('reset', call_cmd='*RST')
@@ -299,9 +300,11 @@ class Keithley_6221(VisaInstrument):
             self.add_parameter('constdelta', names=('deltaV', 'time'),
                                parameter_class=SweepTimeParameter,
                                labels=('Delta Mode Volgage', 'Time'),
-                               shapes=((self._delta_points,), (self._delta_points,)),
+                               shapes=((self._delta_points,),
+                                       (self._delta_points,)),
                                units=('V', 's'),
-                               setpoints=((tuple(self.sweep_current),),(tuple(countarray),)),
+                               setpoints=((tuple(self.sweep_current),),
+                                          (tuple(countarray),)),
                                setpoint_names=(('current',), ('number',)),
                                setpoint_labels=(('Current',), ('Number',)),
                                setpoint_units=(('A',), ('',)),
@@ -311,14 +314,16 @@ class Keithley_6221(VisaInstrument):
             self.add_parameter('constdelta', parameter_class=SweepParameter,
                                label='Voltage',
                                shape=(points,),
-                               unit='V', setpoints=(tuple(self.sweep_current),),
+                               unit='V',
+                               setpoints=(tuple(self.sweep_current),),
                                setpoint_names=('Current',),
                                setpoint_units=('A',),
                                get_cmd=self.delta_trigger_return)
             self._delta_time_meas = False
 
-    def delta_diff_setup(self, start: Union[int, float], stop: Union[int, float],
-                         step: Union[int, float], delta: Union[int, float]=1e-6,
+    def delta_diff_setup(self, start: Union[int, float],
+                         stop: Union[int, float], step: Union[int, float],
+                         delta: Union[int, float]=1e-6,
                          delay=0, cab: bool=False, timemeas: bool=False):
         """ Sets up (doesn't run yet) the 6221 and 2182(a) into Delta
         differential conductance mode. The unit can be configured with .unit().
@@ -344,7 +349,8 @@ class Keithley_6221(VisaInstrument):
             print('Delta mode is armed. Need to abort first.')
             return
         elif self.diff_arm() == 1:
-            print('Differential conductance mode is already armed. Abort or run.')
+            print('Differential conductance mode is already armed. ' +
+                  'Abort or run.')
             return
 
         if self.k2182_present() != 1:
@@ -365,7 +371,8 @@ class Keithley_6221(VisaInstrument):
             self.write('SOUR:DCON:CAB OFF')
 
         # calculate number of points
-        self._delta_points = int(round(np.abs((stop-start)/step)+1)) #provide a checker for if step is right
+        # TODO: Possibly provide checker to see if step divides stop-step
+        self._delta_points = int(round(np.abs((stop-start)/step)+1))
         self.write('TRAC:POIN {}'.format(self._delta_points))
 
         self.write('SOUR:DCON:ARM')
@@ -377,13 +384,16 @@ class Keithley_6221(VisaInstrument):
             del self.parameters['deltadcon']
 
         if timemeas:  # untested timemeas
-            countarray = np.linspace(1,len(self.sweep_current), len(self.sweep_current))
+            countarray = np.linspace(1, len(self.sweep_current),
+                                     len(self.sweep_current))
             self.add_parameter('deltadcon', names=('dcon', 'time'),
                                parameter_class=SweepTimeParameter,
                                labels=('dVdI/dIdV', 'time'),
-                               shapes=((self._delta_points,), (self._delta_points,)),
+                               shapes=((self._delta_points,),
+                                       (self._delta_points,)),
                                units=(self._dcon_unit, 's'),
-                               setpoints=((tuple(self.sweep_current),),(tuple(countarray),)),
+                               setpoints=((tuple(self.sweep_current),),
+                                          (tuple(countarray),)),
                                setpoint_names=(('current',), ('number',)),
                                setpoint_labels=(('Current',), ('Number',)),
                                setpoint_units=(('A',), ('',)),

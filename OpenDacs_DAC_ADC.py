@@ -7,7 +7,6 @@ DAC_ADC driver for QCodes, modeled after the do_DAC_ADC driver for qtlab
 """
 
 
-import qcodes as qc
 from qcodes import Instrument
 import qcodes.utils.validators as vals
 from qcodes.utils.helpers import strip_attrs
@@ -43,8 +42,9 @@ def DAC_setvolt(ser, ch, volt):
     s = 'SET,' + con_ch + ',' + str(volt) + '\r'
     ser.write(s.encode('utf-8'))
     mes = ser.readline().decode('utf-8')
+    # TODO: Calibrate and remove printed statements
     print(mes)  # Comment this out to remove printed statements
-    set_ch = mes.split(' ')[1]
+    # set_ch = mes.split(' ')[1]  # Uncomment to get the set channel
     set_volt = mes.split(' ')[4].split('V')[0]
     return float(set_volt)  # can include channel with , set_ch
 

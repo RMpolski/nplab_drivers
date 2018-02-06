@@ -23,22 +23,20 @@ def parse_output_string(s):
     return s
 
 
+boolcheck = (0, 1, 'on', 'off', 'ON', 'OFF')
+
+
 def parse_output_bool(value):
-    if int(value) == 1:
-        return True
-    elif int(value) == 0:
-        return False
+    if int(value) == 1 or int(value) == 0:
+        return int(value)
     elif value is True or value is False:
-        return value
+        return int(value)
+    elif value == 'on' or value == 'ON':
+        return 1
+    elif value == 'off' or value == 'OFF':
+        return 0
     else:
         raise ValueError('Must be boolean, 0 or 1, True or False')
-
-
-def parse_input_bool(value):
-    if value:
-        return True
-    else:
-        return False
 
 
 class Keithley_2182a(VisaInstrument):
@@ -72,17 +70,17 @@ class Keithley_2182a(VisaInstrument):
         # distinguish between temp and voltage modes.
         self.add_parameter('range',
                            unit='V',
-                           get_cmd=partial(self._get_mode_param_chan, 'RANG',
-                                           float),
+                           get_cmd=partial(self._get_mode_param_chan, 'RANG'),
                            set_cmd=partial(self._set_mode_param_chan, 'RANG'),
                            get_parser=float,
+                           set_parser=float,
                            vals=vals.Numbers(0, 120))
         self.add_parameter('auto_range',
-                           get_cmd=partial(self._get_mode_param, 'RANG:AUTO',
-                                           parse_output_bool),
+                           get_cmd=partial(self._get_mode_param, 'RANG:AUTO'),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
                            get_parser=int,
-                           vals=vals.Ints(0, 1))
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
 # TODO: Change measure to get unit from the measurement type
         self.add_parameter('measure',
                            get_cmd='SENS:DATA:FRES?',
@@ -90,27 +88,29 @@ class Keithley_2182a(VisaInstrument):
                            vals=vals.Numbers(),
                            unit='V')
         self.add_parameter('nplc',
-                           get_cmd=partial(self._get_mode_param, 'NPLC',
-                                           float),
+                           get_cmd=partial(self._get_mode_param, 'NPLC',),
                            set_cmd=partial(self._set_mode_param, 'NPLC'),
                            get_parser=float,
+                           set_parser=float,
                            vals=vals.Numbers(0.01, 60))
         self.add_parameter('line_sync',
                            get_cmd='SYST:LSYN?',
                            set_cmd='SYST:LSYN {}',
                            get_parser=int,
-                           vals=vals.Ints(0, 1))
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
         self.add_parameter('front_autozero',
                            get_cmd='SYST:FAZ?',
                            set_cmd='SYST:FAZ {}',
                            get_parser=int,
-                           vals=vals.Ints(0, 1))
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
         self.add_parameter('autozero',
                            get_cmd='SYST:AZER?',
                            set_cmd='SYST:AZER {}',
-                           get_parser=parse_output_bool,
-                           set_parser=int,
-                           vals=vals.Ints(0, 1))
+                           get_parser=int,
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
         self.add_parameter('temp_unit',
                            get_cmd='UNIT:TEMP?',
                            set_cmd='UNIT:TEMP {}',
@@ -120,11 +120,14 @@ class Keithley_2182a(VisaInstrument):
                            get_cmd='DISP:ENAB?',
                            set_cmd='DISP:ENAB {}',
                            get_parser=int,
-                           vals=vals.Ints(0, 1))
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
         self.add_parameter('beeper',
                            get_cmd='SYST:BEEP?',
                            set_cmd='SYST:BEEP {}',
-                           vals=vals.Ints(0, 1))
+                           set_parser=parse_output_bool,
+                           get_parser=int,
+                           vals=vals.Enum(*boolcheck))
 
         self.add_function('reset', call_cmd='*RST')
         self.add_function('get_error', call_cmd='SYST:ERR?')
@@ -159,14 +162,14 @@ class Keithley_2182a(VisaInstrument):
             print('Must be in voltage mode, range 10mV')
             self.write('CAL:UNPR:ACAL:DONE')
 
-    def _get_mode_param(self, parameter: str, parser):
+    def _get_mode_param(self, parameter: str):
         """ Read the current Keithley mode and ask for a parameter """
         mode = parse_output_string(self.mode())
         cmd = 'SENS:{}:{}?'.format(mode, parameter)
 
-        return parser(self.ask(cmd))
+        return self.ask(cmd)
 
-    def _get_mode_param_chan(self, parameter: str, parser, chan=None):
+    def _get_mode_param_chan(self, parameter: str, chan=None):
         """ Read the current Keithley mode and ask for a parameter """
         mode = parse_output_string(self.mode())
         if chan is None:
@@ -174,7 +177,7 @@ class Keithley_2182a(VisaInstrument):
         cstring = 'CHAN{}'.format(chan)
         cmd = 'SENS:{}:{}:{}?'.format(mode, cstring, parameter)
 
-        return parser(self.ask(cmd))
+        return self.ask(cmd)
 
     def _set_mode_param(self, parameter: str, value):
         """ Read the current Keithley mode and set a parameter """
