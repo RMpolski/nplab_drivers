@@ -1,19 +1,16 @@
-"""
-Created Feb 7, 2018 by Robert Polski
-"""
-
-import numpy as np
-from typing import Union
+"""Created Feb 7, 2018 by Robert Polski"""
 
 from qcodes import VisaInstrument
-from qcodes.instrument.parameter import ArrayParameter, MultiParameter
 import qcodes.utils.validators as vals
 import time
 
 
 class Agilent_XGS600(VisaInstrument):
     """The Agilent XGS-600 pressure gauge driver"""
-    def __init__(self, name, address):
+    def __init__(self, name: str, address: str, **kwargs):
+        """name: internal name
+           address: address of the port in VISA"""
         super().__init__(name, address, terminator='\r', **kwargs)
-
+        s1 = ''
         self.add_parameter('pressure_units', get_cmd='#0013')
+        self.add_parameter('pressure_s1', get_cmd='#0002'+s1)
