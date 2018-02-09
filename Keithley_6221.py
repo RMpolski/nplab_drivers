@@ -149,6 +149,7 @@ class Keithley_6221(VisaInstrument):
         self.add_parameter('unit',
                            get_cmd='UNIT?',
                            set_cmd='UNIT {}',
+                           initial='OHMS',
                            get_parser=str,
                            vals=vals.Enum('V', 'ohms', 'OHMS', 'S', 'SIEM',
                                           'siem', 'siemens', 'SIEMENS'))
@@ -195,7 +196,11 @@ class Keithley_6221(VisaInstrument):
     def delta_trigger_return(self):
         """ Triggers, waits, parses, and returns the results of a delta sweep.
 
-        The array is of shape (points, 2), where the first column is the
+        Don't use this after a delta_diff_setup or const_delta_setup.
+        Use instead deltadcon or constdelta instead
+
+        The array is of shape (points, 1) if _delta_time_meas=False or
+        (points, 2) if True. If True, the first column is the
         time between the initial data point and the given data point, and
         the second column is the value"""
         if self.delta_arm() != 1 and self.diff_arm() != 1:
@@ -248,6 +253,16 @@ class Keithley_6221(VisaInstrument):
         is the amount of time (in seconds) to wait before measuring after
         flipping from high to low or vice versa. The argument cab is whether
         or not to abort when compliance is entered.
+
+        After setting up with this command, use constdelta() to return a
+        measurement
+
+        high: upper current
+        points: number of data points returned
+        low: (optional) lower current. If None, low=-high
+        cab: abort if above compliance
+        timemeas: False - return value column,
+                  True - return time and value columns
 
         The function checks if the 2182 is connected over the RS-232 port
         and leaves the 6221 in an armed state.
@@ -326,20 +341,29 @@ class Keithley_6221(VisaInstrument):
                          delta: Union[int, float]=1e-6,
                          delay=0, cab: bool=False, timemeas: bool=False):
         """ Sets up (doesn't run yet) the 6221 and 2182(a) into Delta
-        differential conductance mode. The unit can be configured with .unit().
+        differential conductance mode. The unit can be configured with .unit()
+        to 'OHMS', 'S', 'V'.
         The 6221 current source alternates and sweeps from start to end, with
         step between the two.
 
+        To run after setup and return the array, use deltadcon
+
+        start: starting current (A) for sweep
+        stop: end current (A) for sweep
+        step: stepsize (A)
         delta: amount the delta mode jumps above and below the step value
+                for averaging
         delay: amount of time (in seconds) to wait before measuring after
-        changing sweep values.
+                changing sweep values.
         cab: whether or not to abort when compliance is entered.
+        timemeas: False - returns single values column,
+                  True - returns time column and values column
 
         The function checks if the 2182 is connected over the RS-232 port
         and leaves the 6221 in an armed state.
 
         Lastly, the function creates a gettable array parameter for the setup
-        called constdelta, with setpoints as the mean current. The timemeas
+        called deltadcon, with setpoints as the mean current. The timemeas
         argument determines whether or not the parameter will include time
         in one column or not.
         Note: you have to run the abort_arm() function after you're done
