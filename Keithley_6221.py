@@ -44,7 +44,7 @@ class SweepParameter(ArrayParameter):
         else:
             self.get_cmd = get_cmd
 
-    def get(self):
+    def get_raw(self):
         # return the parameter by calling get_cmd
         return self.get_cmd()
 
@@ -66,7 +66,7 @@ class SweepTimeParameter(MultiParameter):
         else:
             self.get_cmd = get_cmd
 
-    def get(self):
+    def get_raw(self):
         # return the parameter by calling get_cmd
         return self.get_cmd()
 
