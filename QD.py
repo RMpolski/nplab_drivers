@@ -116,7 +116,7 @@ class QDInstrument:
         return err, arg0.value
 
 
-class QD_System(Instrument, QDInstrument):
+class QD(Instrument, QDInstrument):
     """
     The actual instrument class to be used by QCoDeS.
     Note: This uses mT units for magnetic field
