@@ -149,7 +149,7 @@ class Keithley_6221(VisaInstrument):
         self.add_parameter('unit',
                            get_cmd='UNIT?',
                            set_cmd='UNIT {}',
-                           initial='OHMS',
+                           initial_value='OHMS',
                            get_parser=str,
                            vals=vals.Enum('V', 'ohms', 'OHMS', 'S', 'SIEM',
                                           'siem', 'siemens', 'SIEMENS'))
