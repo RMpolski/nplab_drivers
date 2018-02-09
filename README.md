@@ -32,7 +32,7 @@ Also install other packages into the qcodes environment (you should still be in 
 
 Enter the command "git pull" while in the nplab_drivers directory to get the latest updates to our drivers. Using "git pull" while in the top level of the qcodes directory will not affect our drivers.
 
-Make sure you're using the qcodes environment when you're opening ipython, spyder, or jupyter sessions.
+Make sure you're using the qcodes environment when you're opening ipython, spyder, or jupyter sessions, or when you run a file the imports things from the qcodes package.
 
-Import our drivers using, e.g. "from qcodes.instrument_drivers.nplab_drivers.Keithley_6221 import Keithley_6221"
+While in a python session, if you want to use our drivers, import them using, e.g. "from qcodes.instrument_drivers.nplab_drivers.Keithley_6221 import Keithley_6221"
 Then instantiate the driver using, e.g. k6 = Keithley_6221('k6', 'GPIB::12::INSTR')
