@@ -162,6 +162,11 @@ class Keithley_6221(VisaInstrument):
         self.add_parameter('diff_arm',
                            get_cmd='SOUR:DCON:ARM?',
                            get_parser=int)
+        self.add_parameter('delta_IV_sweep',
+                           get_cmd=self.delta_IV_sweep_get,
+                           set_cmd=self.delta_IV_sweep_set,
+                           get_parser=float,
+                           set_parser=float)
         # The following are only settable for now
         # TODO: find a way to change the visa read command to
         # SYST:COMM:SER:ENT?
@@ -433,3 +438,67 @@ class Keithley_6221(VisaInstrument):
                                setpoint_units=('A',),
                                get_cmd=self.delta_trigger_return)
             self._delta_time_meas = False
+
+    def delta_IV_sweep_setup(self, delay=0.5, ptsavg=1, cab=False):
+        if ptsavg < 1:
+            print('ptsavg must be greater than 1')
+        
+        self._delta_delay = delay
+        self._delta_cab = False
+        self._sweepsetup = True
+        self._deltaptsavg = int(ptsavg)
+        
+    def delta_IV_sweep_set(self, high):
+        
+        if self.delta_arm() == 1:
+            print('Delta mode is armed. Need to abort first.')
+            return
+        elif self.diff_arm() == 1:
+            print('Differential conductance is armed. Need to abort first.')
+            return
+        elif self._sweepsetup is not True:
+            print('Run delta_IV_sweep_setup first')
+
+        if self.k2182_present() != 1:
+            print('2182 is not connected properly through the RS-232 port')
+            return
+
+        self.write('SOUR:DELT:HIGH {}'.format(high))
+        self.write('SOUR:DELT:LOW {}'.format(-high))
+
+        if self._delta_cab:
+            self.write('SOUR:DELT:CAB 1')
+        else:
+            self.write('SOUR:DELT:CAB 0')
+
+        self.write('SOUR:DELT:DEL {}'.format(self._delta_delay))
+        self.write('SOUR:DELT:COUN {}'.format(self._deltaptsavg+2))
+        self.write('TRAC:POIN {}'.format(self._deltaptsavg+2))
+        self.write('SOUR:DELT:ARM')
+        
+    def delta_IV_sweep_get(self):
+        if self.delta_arm() == 0:
+            print('Run delta_IV_sweep_set first')
+            return
+        self.write('INIT:IMM')
+        
+        self._old_timeout = self.timeout()
+        if self._deltaptsavg > 4:
+            self.timeout((self._deltaptsavg+2)*self._delta_delay + 2)
+        else:
+            self.timeout((self._deltaptsavg+2)*self._delta_delay + 5)
+        count = 0
+        while not int(self.ask('*OPC?')):  # Wait until done. Try if this works
+            time.sleep(.1)
+            if count > 50:
+                print('Delta function did not appear to finish')
+                break
+            count += 1
+        
+        _floatdata = np.fromstring(self.ask('TRAC:DATA?'), sep=',')
+        self.abort_arm()
+        _vals = np.zeros(self._deltaptsavg)
+        for i in range(len(_floatdata)):
+                if np.mod(i, 2) == 0 and i > 2:
+                    _vals[int((i-4)/2)] = _floatdata[i]
+        return np.average(_vals)
