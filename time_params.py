@@ -29,9 +29,10 @@ class time_stamp(Parameter):
                          get_parser=float, **kwargs)
 
 
-def output_date_strings(values, fmt='%Y-%m-%d %H:%M:%S:%f', starttime=[]):
+def output_datetime(values, starttime=[]):
     """ values can be an array of time.time() floats or single time.time()
-    floats. Returns a list of strings with the date in the format fmt
+    floats. Returns a list of python datetime.datetime objects (plottable in
+    matplotlib)
 
     starttime is a list that offsets the time to the given (in integers)
     (year, month, day, hour, minute, second, microsecond).
@@ -53,7 +54,7 @@ def output_date_strings(values, fmt='%Y-%m-%d %H:%M:%S:%f', starttime=[]):
         starttimestamp = datetime(*starttime).timestamp()
     if type(values) is float or type(values) is int:
         v = float(values) + starttimestamp
-        return datetime.fromtimestamp(v).strftime(fmt)
+        return [datetime.fromtimestamp(v)]
     else:
         if type(values) is np.ndarray or type(values) is qc.data.data_array.DataArray:
                 v = np.array(values)
@@ -70,5 +71,20 @@ def output_date_strings(values, fmt='%Y-%m-%d %H:%M:%S:%f', starttime=[]):
                 return
         dtimearray = []
         for val in v:
-            dtimearray.append(datetime.fromtimestamp(val).strftime(fmt))
+            dtimearray.append(datetime.fromtimestamp(val))
         return dtimearray
+
+
+def output_date_strings(values, fmt='%Y-%m-%d %H:%M:%S:%f', starttime=[]):
+    """ values can be an array of time.time() floats or single time.time()
+    floats. Returns a list of strings with the date in the format fmt.
+
+    starttime is a list that offsets the time to the given (in integers)
+    (year, month, day, hour, minute, second, microsecond).
+    if all the values are not provided, only the first few are filled
+    and further offset values are 1 for dates and 0 for time"""
+    dtimearray = output_datetime(values, starttime)
+    stringarray = []
+    for val in dtimearray:
+        stringarray.append(val.strftime(fmt))
+    return stringarray

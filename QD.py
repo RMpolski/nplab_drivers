@@ -153,7 +153,7 @@ class QD(Instrument, QDInstrument):
                            set_cmd=self.field_set_stable,
                            vals=vals.Numbers(-9000, 9000))
 
-        self.field_rate = 1  # mT/s
+        self.field_rate = 15  # mT/s
         self.temperature_rate = 10  # K/s
         print('Note this uses mT units for getting and setting fields with' +
               ' field() and field_set_stable(). Just divide Oe by ' +

@@ -7,7 +7,17 @@ Clone this repository into the instrument_drivers folder where QCoDeS is install
 
 You also will need, for the Dynacool PPMS system, to use the command "conda install pywin32" while in the qcodes environment to have the right packages for the driver QD.py.
 
-The intent is to make a Keithley 6221-2182a combined instrument (and possibly experiment with separating the instruments for a QCoDeS-driven sweep) for doing low-noise, low-voltage delta voltage and differential resistance sweeps. The Dynacool PPMS driver "QD.py" works now too. The other instrument that works right now is the OpenDACs DAC_ADC (based on http://opendacs.com/), and the driver for the Seekat (on Arduino Uno) is coming soon. The OpenDACs drivers also require "conda install pyserial", since they use a serial connection to Arduinos.
+The current working drivers are:
+Keithley_6221 (except for the delta_IV_sweep_get command and displaying error messages)
+Keithley_2182a
+QD (for a Quantum Design Dynacool PPMS system)
+DAC_AC (from openDacs http://opendacs.com/)
+Seekat (also from openDacs)
+
+Also a little package with simple commands in case anyone wants to be more time-conscious with the experiments. It has gettable time parameters that output floats and methods of changing these floats into date/time strings or python datetime objects (accurate to milliseconds):
+time_params
+
+Note: QD requires "conda install pywin32" since it connects through the MultiVu program on windows (and therefore would need some help to work on a Mac), and the OpenDACs drivers require "conda install pyserial", since they use a serial connection to Arduinos (but they also work on Macs). Find the GPIB addresses for the Keithleys in the NI MAX software, and find the Arduino addresses through the Arduino program (on Mac it will look like /dev/cu.*******, and on Windows a mores simple 'COM3' or with some other number). QD only requires the MultiVu software and no address.
 
 ## Directions for setup:
 Install Anaconda form https://www.anaconda.com/download/

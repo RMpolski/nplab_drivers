@@ -147,6 +147,7 @@ class Keithley_6221(VisaInstrument):
 
         # Related to attached 2182(a) nanovoltmeter
         self.add_parameter('unit',
+                           label='diff conductance unit'
                            get_cmd='UNIT?',
                            set_cmd='UNIT {}',
                            initial_value='OHMS',
@@ -163,6 +164,7 @@ class Keithley_6221(VisaInstrument):
                            get_cmd='SOUR:DCON:ARM?',
                            get_parser=int)
         self.add_parameter('delta_IV_sweep',
+                           snapshot_get=False,
                            get_cmd=self.delta_IV_sweep_get,
                            set_cmd=self.delta_IV_sweep_set,
                            get_parser=float,
@@ -171,27 +173,33 @@ class Keithley_6221(VisaInstrument):
         # TODO: find a way to change the visa read command to
         # SYST:COMM:SER:ENT?
         self.add_parameter('k2_range',
+                           snapshot_get=False,
                            set_cmd='SYST:COMM:SER:SEND "VOLT:RANG {}"',
                            vals=vals.Numbers(0, 120))
         self.add_parameter('k2_nplc',
+                           snapshot_get=False,
                            set_cmd='SYST:COMM:SER:SEND "VOLT:NPLC {}"',
                            vals=vals.Numbers(0.01, 60))
         self.add_parameter('k2_line_sync',
+                           snapshot_get=False,
                            set_cmd='SYST:COMM:SER:SEND "SYST:LSYN {}"',
                            set_parser=parse_output_bool,
                            vals=vals.Enum(*boolcheck))
         self.add_parameter('k2_front_autozero',
+                           snapshot_get=False,
                            set_cmd='SYST:COMM:SER:SEND "SYST:FAZ {}"',
                            set_parser=parse_output_bool,
                            vals=vals.Enum(*boolcheck))
         self.add_parameter('k2_autozero',
+                           snapshot_get=False,
                            set_cmd='SYST:COMM:SER:SEND "SYST:AZER {}"',
                            set_parser=parse_output_bool,
                            vals=vals.Enum(*boolcheck))
 
         self.add_function('abort_arm', call_cmd='SOUR:SWE:ABOR')
         self.add_function('reset', call_cmd='*RST')
-        self.add_function('get_error', call_cmd='SYST:ERR?')  # doesn't work
+        # TODO: Getting error messages doesn't work
+        self.add_function('get_error', call_cmd='SYST:ERR?')
 
         if reset:
             self.reset()
@@ -265,7 +273,9 @@ class Keithley_6221(VisaInstrument):
         high: upper current
         points: number of data points returned
         low: (optional) lower current. If None, low=-high
-        cab: abort if above compliance
+        cab: True aborts if compliance is crossed. False will just keep running
+                at the compliance level and possibly make some nasty
+                beeping sounds
         timemeas: False - return value column,
                   True - return time and value columns
 
@@ -360,7 +370,9 @@ class Keithley_6221(VisaInstrument):
                 for averaging
         delay: amount of time (in seconds) to wait before measuring after
                 changing sweep values.
-        cab: whether or not to abort when compliance is entered.
+        cab: True aborts if compliance is crossed. False will just keep running
+                at the compliance level and possibly make some nasty
+                beeping sounds
         timemeas: False - returns single values column,
                   True - returns time column and values column
 
@@ -440,16 +452,34 @@ class Keithley_6221(VisaInstrument):
             self._delta_time_meas = False
 
     def delta_IV_sweep_setup(self, delay=0.5, ptsavg=1, cab=False):
+        """ Run this before any delta_IV_sweep_set or _get. It configures the
+        internal variables that control the delay, amount of points to average,
+        and whether or not the sweep should abort when the compliance level is
+        crossed.
+
+        delay: the delta delay between when the current value is set and when
+                the 2182a measures.
+        ptsavg: If 1, delta mode goes high->low. If 2, it goes
+                high->low->high, and so on. One data point is taken
+                at each point and then averaged at the end.
+        cab: True aborts if compliance is crossed. False will just keep running
+                at the compliance level and possibly make some nasty
+                beeping sounds"""
+
         if ptsavg < 1:
             print('ptsavg must be greater than 1')
-        
+
         self._delta_delay = delay
         self._delta_cab = False
         self._sweepsetup = True
         self._deltaptsavg = int(ptsavg)
-        
+
     def delta_IV_sweep_set(self, high):
-        
+        """This arms the delta_IV_sweep and can be run in qcodes like any other
+        set command with one parameter to set.
+        high: the current amplitude to set for the delta mode run. The low
+        value of the delta mode measurement will automatically be -high."""
+
         if self.delta_arm() == 1:
             print('Delta mode is armed. Need to abort first.')
             return
@@ -472,16 +502,20 @@ class Keithley_6221(VisaInstrument):
             self.write('SOUR:DELT:CAB 0')
 
         self.write('SOUR:DELT:DEL {}'.format(self._delta_delay))
-        self.write('SOUR:DELT:COUN {}'.format(self._deltaptsavg+2))
-        self.write('TRAC:POIN {}'.format(self._deltaptsavg+2))
+        self.write('SOUR:DELT:COUN {}'.format(self._deltaptsavg+1))
+        self.write('TRAC:POIN {}'.format(self._deltaptsavg+1))
         self.write('SOUR:DELT:ARM')
-        
+
     def delta_IV_sweep_get(self):
+        """A simple get command that can be used with qcodes for getting the
+        results after running delta_IV_sweep_setup at the beginning and
+        using delta_IV_sweep_set for each sweep value."""
+        
         if self.delta_arm() == 0:
             print('Run delta_IV_sweep_set first')
             return
         self.write('INIT:IMM')
-        
+
         self._old_timeout = self.timeout()
         if self._deltaptsavg > 4:
             self.timeout((self._deltaptsavg+2)*self._delta_delay + 2)
@@ -494,11 +528,11 @@ class Keithley_6221(VisaInstrument):
                 print('Delta function did not appear to finish')
                 break
             count += 1
-        
+
         _floatdata = np.fromstring(self.ask('TRAC:DATA?'), sep=',')
         self.abort_arm()
         _vals = np.zeros(self._deltaptsavg)
         for i in range(len(_floatdata)):
-                if np.mod(i, 2) == 0 and i > 2:
-                    _vals[int((i-4)/2)] = _floatdata[i]
+                if np.mod(i, 2) == 0 and i > 0:
+                    _vals[int((i-2)/2)] = _floatdata[i]
         return np.average(_vals)
