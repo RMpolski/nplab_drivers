@@ -32,7 +32,7 @@ class Keithley_2200(VisaInstrument):
             address: VISA ressource address
             reset: Set Keithley to defaults? True or False
         """
-        super().__init__(name, address, terminator='\n')
+        super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter('voltage', set_cmd='VOLT {}',
                            get_cmd='FETC:VOLT?', unit='V',
