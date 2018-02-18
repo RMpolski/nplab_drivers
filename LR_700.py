@@ -17,11 +17,11 @@ class LR_700(VisaInstrument):
     def __init__(self, name: str, address: str, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        self.range_vals = {2e-3: 0, 20e-3: 1, 200e-3: 2, 2: 3,
-                           20: 4, 200: 5, 2e3: 6, 20e3: 7, 200e3: 8,
-                           2e6: 9}
-        self.excitation_vals = {20e-6: 0, 60e-6: 1, 200e-6: 2,
-                                600e-6: 3, 2e-3: 4, 6e-3: 5, 20e-3: 6}
+        self.range_vals = {2e-3: '0', 20e-3: '1', 200e-3: '2', 2: '3',
+                           20: '4', 200: '5', 2e3: '6', 20e3: '7', 200e3: '8',
+                           2e6: '9'}
+        self.excitation_vals = {20e-6: '0', 60e-6: '1', 200e-6: '2',
+                                600e-6: '3', 2e-3: '4', 6e-3: '5', 20e-3: '6'}
 
         self.add_parameter(self, 'range',
                            set_cmd='Range {}',

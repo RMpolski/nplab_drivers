@@ -8,7 +8,7 @@ DAC_ADC driver for QCodes, modeled after the do_DAC_ADC driver for qtlab
 
 
 import numpy as np
-from qcodes import Instrument
+from qcodes import Instrument, Parameter
 import qcodes.utils.validators as vals
 from qcodes.utils.helpers import strip_attrs
 from functools import partial
@@ -49,11 +49,10 @@ def set_volt(ser, ch, volt):
     if int(dec16) == 2**16:
         dec16 = 0
 
-    # time.sleep(1)  # do we need these?
-    bin16 = str(bin(int(dec16))[2:]).zfill(16)  # 16 bit binary
+    bin16 = bin(dec16)[2:].zfill(16)  # 16 bit binary
     d1 = int(bin16[:8], 2)  # first 8 bits
     d2 = int(bin16[8:17], 2)  # second 8 bits
-    time.sleep(0.005)  # do we need these?
+    time.sleep(0.005)
 
     ser.write([255, 254, 253, ch_list[0], d1*ch_list[2],
               d2*ch_list[2], ch_list[1], d1*ch_list[3],
@@ -157,3 +156,41 @@ class Seekat(Instrument):
 
     def DAC_get(self, ch):
         return get_volt(self._ser, ch)
+
+    def calibrate(self, ch: int, param: Parameter):
+        """Calibrates the internal offset and gain of the Seekat channel ch
+        (integer from 1 to 8) by measuring another qcodes parameter param
+        (which will often be instr.param for some instrument. e.g.
+        Keithley_2000.amplitude)
+
+        Sets the Seekat channel to 0V, measures with instr.param(), sets the
+        Seekat channel to -10V, measures again, and then sets the
+        Seekat to 0V."""
+
+        ch_list = ch_convert(ch)
+        # Zero the offset and gain channels to start
+        # (add 24 and 16, respectively to access these)
+        self._ser.write([255, 254, 253, ch_list[0]+24, 0, 0, ch_list[1]+24,
+                         0, 0])
+        self._ser.write([255, 254, 253, ch_list[0]+16, 0, 0, ch_list[1]+16,
+                         0, 0])
+
+        # Measure 0 volts for offset
+        set_volt(self._ser, ch, 0)
+        time.sleep(2)
+        offmeas = param()
+        offset = -offmeas
+        offsetsteps = round(offset/38.14e-6)
+        offset8 = bin(offsetsteps % (2**8))[2:].zfill(8)
+        d1 = 0  # first 8 bits (out of 16, always going to be 0)
+        d2 = int(offset8, 2)
+        time.sleep(0.005)
+
+        self._ser.write([255, 254, 253, ch_list[0]+24, d1*ch_list[2],
+                         d2*ch_list[2], ch_list[1]+24, d1*ch_list[3],
+                         d2*ch_list[3]])
+        self._ser.flush()
+        time.sleep(1)
+
+        # Measure 10 volts for gain
+        set_volt(self._ser, ch, -10)
