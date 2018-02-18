@@ -192,5 +192,21 @@ class Seekat(Instrument):
         self._ser.flush()
         time.sleep(1)
 
-        # Measure 10 volts for gain
+        # Measure -10 volts for gain
         set_volt(self._ser, ch, -10)
+        time.sleep(2)
+        gainerror = param() + 10
+        gainsteps = round(gainerror/152.59e-6)
+        gain8 = bin(gainsteps % (2**8))[2:].zfill(8)
+        d1 = 0
+        d2 = int(gain8, 2)
+        time.sleep(0.005)
+
+        self._ser.write([255, 254, 253, ch_list[0]+16, d1*ch_list[2],
+                         d2*ch_list[2], ch_list[1]+16, d1*ch_list[3],
+                         d2*ch_list[3]])
+        self._ser.flush()
+        time.sleep(1)
+
+        # Set voltage to 0
+        self.set_volt(self._ser, ch, 0)
