@@ -2,6 +2,19 @@ from qcodes import VisaInstrument
 import qcodes.utils.validators as vals
 
 
+def R_parser(string_out):
+    newstrs = string_out.strip().split(' ')
+
+    if newstrs[1] == 'KOHM':  # kilo Ohms
+        return float(newstrs[0])*10e3
+    elif newstrs[1] == 'MOHM':
+        return float(newstrs[0])*10e-3  # I think this is probably milli Ohms
+    elif newstrs[1] == 'UOHM':  # micro Ohms
+        return float(newstrs[0])*10e-6
+    else:
+        return float(newstrs[0])
+
+
 class LR_700(VisaInstrument):
     """Instrument driver for the Lakeshore LR_700 AC resistance bridge.
     Currently only has the ability to get resistance, set the full-scale
@@ -39,6 +52,8 @@ class LR_700(VisaInstrument):
                            set_cmd='Varexc {}',
                            vals=vals.Ints(0, 1))
         self.add_parameter('R_measure',
-                           get_cmd='Get 0')
+                           get_cmd='Get 0',
+                           get_parser=R_parser)
         self.add_parameter('X_measure',
-                           get_cmd='Get 1')
+                           get_cmd='Get 1',
+                           get_parser=R_parser)
