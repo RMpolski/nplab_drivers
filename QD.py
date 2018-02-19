@@ -139,7 +139,7 @@ class QD(Instrument, QDInstrument):
                            label='Temperature',
                            unit='K',
                            get_cmd=self.temperature_get_cmd,
-                           set_cmd=self.temperature_set_stable,
+                           set_cmd=self.temperature_stable,
                            vals=vals.Numbers(1.7, 400))
         self.add_parameter('field',
                            label='Magnetic Field',
@@ -150,7 +150,7 @@ class QD(Instrument, QDInstrument):
         self.add_parameter('field_set_stable',
                            label='Magnetic Field', unit='mT',
                            get_cmd=self.field_get_cmd,
-                           set_cmd=self.field_set_stable,
+                           set_cmd=self.field_stable,
                            vals=vals.Numbers(-9000, 9000))
 
         self.field_rate = 15  # mT/s
@@ -159,8 +159,8 @@ class QD(Instrument, QDInstrument):
               ' field() and field_set_stable(). Just divide Oe by ' +
               '10 to get mT')
 
-    def temperature_set_stable(self, temperature: Union[int, float],
-                               slightlyfaster: bool=False):
+    def temperature_stable(self, temperature: Union[int, float],
+                           slightlyfaster: bool=False):
         """ temperature:  in Kelvin.
         slightlyfaster=True just moves on when the temperature status
         is near instead of requiring it to be stable"""
@@ -169,7 +169,8 @@ class QD(Instrument, QDInstrument):
         self.set_temperature(temperature, self.temperature_rate, 0)
         waiting = True
         startwaittime = time.time()
-        timeout = (np.abs(temp_init-temperature)/self.temperature_rate)*3 + 240
+        timeout = (np.abs(temp_init-temperature)/self.temperature_rate)*2 + 240
+        time.sleep((np.abs(temp_init-temperature)/self.temperature_rate)+1)
         # in seconds
         while waiting:
             err, tval, status = self.get_temperature()
@@ -194,7 +195,7 @@ class QD(Instrument, QDInstrument):
         err, temp, status = self.get_temperature()
         return float(temp)
 
-    def field_set_stable(self, field: Union[int, float]):
+    def field_stable(self, field: Union[int, float]):
         """ field: magnetic field in milliTesla"""
         err_init, bval_init, status_init = self.get_field()
         bval_init = float(bval_init)/10  # convert from Oe to mT
@@ -202,6 +203,7 @@ class QD(Instrument, QDInstrument):
         waiting = True
         startwaittime = time.time()
         timeout = (np.abs(bval_init-field))/(self.field_rate)*3 + 120
+        time.sleep((np.abs(bval_init-field))/(self.field_rate)+1)
         # in seconds
         while waiting:
             err, bval, status = self.get_field()
@@ -211,7 +213,7 @@ class QD(Instrument, QDInstrument):
                 if time.time() - startwaittime > timeout:
                     waiting = False
                     print('Field timeout')
-            qc.Wait(0.25)
+            time.sleep(0.25)
         return
 
     def field_set_release(self, field: Union[int, float]):
