@@ -1,6 +1,7 @@
 from qcodes import VisaInstrument
 import qcodes.utils.validators as vals
 from functools import partial
+import time
 
 
 def R_parser(string_out):
@@ -74,7 +75,7 @@ class LR_700(VisaInstrument):
         self.add_parameter('range',
                            set_cmd='Range {}',
                            val_mapping=self.range_vals,
-                           get_cmd='Get 6',
+                           get_cmd=partial(self.get_string_repeat, 'Get 6'),
                            get_parser=partial(self.get6parser, 'range'),
                            unit='Ohms')
         self.add_parameter('autorange',
@@ -82,41 +83,41 @@ class LR_700(VisaInstrument):
                            vals=vals.Ints(0, 1))
         self.add_parameter('excitation',
                            set_cmd='Excitation {}',
-                           get_cmd='Get 6',
+                           get_cmd=partial(self.get_string_repeat, 'Get 6'),
                            get_parser=partial(self.get6parser, 'excitation'),
                            val_mapping=self.excitation_vals,
                            unit='V')
         self.add_parameter('exc_pct',
                            set_cmd='Varexc ={}',
                            set_parser=partial(zfill_parser, 2),
-                           get_cmd='Get 6',
+                           get_cmd=partial(self.get_string_repeat, 'Get 6'),
                            get_parser=partial(self.get6parser, 'exc_pct'),
                            vals=vals.Ints(5, 99))
         self.add_parameter('exc_pct_on',
                            set_cmd='Varexc {}',
                            vals=vals.Ints(0, 1))
         self.add_parameter('R_measure',
-                           get_cmd='Get 0',
+                           get_cmd=partial(self.get_string_repeat, 'Get 0'),
                            unit='Ohms',
                            get_parser=R_parser)
         self.add_parameter('DelR_measure',
-                           get_cmd='Get 2',
+                           get_cmd=partial(self.get_string_repeat, 'Get 2'),
                            get_parser=R_parser,
                            unit='Ohms')
         self.add_parameter('X_measure',
-                           get_cmd='Get 1',
+                           get_cmd=partial(self.get_string_repeat, 'Get 1'),
                            get_parser=R_parser)
         self.add_parameter('DelX_measure',
-                           get_cmd='Get 3',
+                           get_cmd=partial(self.get_string_repeat, 'Get 3'),
                            get_parser=R_parser)
         self.add_parameter('x10mode',
                            set_cmd='Mode {}',
-                           get_cmd='Get 6',
-                           get_parser=partial(self.get6parser, 'x10'),
+                           get_cmd=partial(self.get_string_repeat, 'Get 6'),
+                           get_parser=partial(self.get6parser, 'x10mode'),
                            vals=vals.Ints(0, 1))
         self.add_parameter('dfilter',
                            set_cmd=self.dfilter_set,
-                           get_cmd='Get 6',
+                           get_cmd=partial(self.get_string_repeat, 'Get 6'),
                            get_parser=partial(self.get6parser, 'dfilter'),
                            val_mapping=self.dfilter_vals,
                            unit='s')
@@ -130,7 +131,7 @@ class LR_700(VisaInstrument):
         self.add_parameter('R_offset',
                            set_cmd='Offset {}',
                            set_parser=partial(offset_parser, 'R'),
-                           get_cmd='Get 4',
+                           get_cmd=partial(self.get_string_repeat, 'Get 4'),
                            get_parser=R_parser,
                            unit='Ohms',
                            vals=vals.MultiType(vals.Numbers(-99.9995, 99.9995),
@@ -138,7 +139,7 @@ class LR_700(VisaInstrument):
         self.add_parameter('X_offset',
                            set_cmd='Offset {}',
                            set_parser=partial(offset_parser, 'X'),
-                           get_cmd='Get 5',
+                           get_cmd=partial(self.get_string_repeat, 'Get 5'),
                            get_parser=R_parser,
                            vals=vals.MultiType(vals.Numbers(-99.9995, 99.9995),
                                                vals.Enum('R', 'X')))
@@ -147,7 +148,33 @@ class LR_700(VisaInstrument):
         self.write('Filter 3')
         self.write('Filter ={}'.format(val))
 
+    def get_string_repeat(self, getstring):
+        """ Since sometimes the value of the returned string is '', repeat up
+        to 40 times every quarter of a second"""
+        string_out = self.ask(getstring)
+        if string_out == '':  # Sometimes the instrument returns nothing
+            not_ready = True
+        else:
+            not_ready = False
+            return string_out
+        count = 0
+        while not_ready:
+            time.sleep(0.25)
+            string_out = self.ask(getstring)
+            if string_out != '':
+                not_ready = False
+            elif count >= 40:
+                not_ready = False
+                print('Get command "' + getstring+'" timed out')
+            count += 1
+        return string_out
+
     def get6parser(self, param, string_out):
+        """Converts the string with all possible values of param into the
+        values needed in the parameter.
+
+        Possible params are: range, excitation, exc_pct, dfilter, x10mode"""
+
         pstring = string_out.strip().spit(',')
         if param == 'range':
             return int(pstring[0].strip()[0])
@@ -172,7 +199,7 @@ class LR_700(VisaInstrument):
                     return self.dfilter_vals[float(filtstrings[0]*60)]
                 else:
                     print('Problem with filter string')
-        elif param == 'x10':
+        elif param == 'x10mode':
             return int(pstring[4].strip()[0])
         else:
             print('Needs one of the following: range, excitation, exc_pct, ' +
