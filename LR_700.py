@@ -175,7 +175,7 @@ class LR_700(VisaInstrument):
 
         Possible params are: range, excitation, exc_pct, dfilter, x10mode"""
 
-        pstring = string_out.strip().spit(',')
+        pstring = string_out.strip().split(',')
         if param == 'range':
             return int(pstring[0].strip()[0])
         elif param == 'excitation':
