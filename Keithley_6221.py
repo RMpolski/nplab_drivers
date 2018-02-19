@@ -147,7 +147,7 @@ class Keithley_6221(VisaInstrument):
 
         # Related to attached 2182(a) nanovoltmeter
         self.add_parameter('unit',
-                           label='diff conductance unit'
+                           label='diff conductance unit',
                            get_cmd='UNIT?',
                            set_cmd='UNIT {}',
                            initial_value='OHMS',
@@ -510,7 +510,7 @@ class Keithley_6221(VisaInstrument):
         """A simple get command that can be used with qcodes for getting the
         results after running delta_IV_sweep_setup at the beginning and
         using delta_IV_sweep_set for each sweep value."""
-        
+
         if self.delta_arm() == 0:
             print('Run delta_IV_sweep_set first')
             return
