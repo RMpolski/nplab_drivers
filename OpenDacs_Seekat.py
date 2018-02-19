@@ -209,4 +209,4 @@ class Seekat(Instrument):
         time.sleep(1)
 
         # Set voltage to 0
-        self.set_volt(self._ser, ch, 0)
+        set_volt(self._ser, ch, 0)
