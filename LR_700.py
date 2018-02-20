@@ -16,7 +16,7 @@ def R_parser(string_out):
             return float(newstrs[0])*10**-6
         else:
             return float(newstrs[0])
-    except Exception:
+    except (ValueError, IndexError):
         return np.nan
 
 
