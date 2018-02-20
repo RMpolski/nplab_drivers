@@ -181,34 +181,37 @@ class LR_700(VisaInstrument):
         Possible params are: range, excitation, exc_pct, dfilter, x10mode"""
 
         pstring = string_out.strip().split(',')
-        if len(pstring) != 7:
-            return np.nan
+        try:
+            if len(pstring) != 7:
+                return np.nan
 
-        if param == 'range':
-            return int(pstring[0].strip()[0])
-        elif param == 'excitation':
-            return int(pstring[1].strip()[0])
-        elif param == 'exc_pct':
-            return int(pstring[2].strip()[:3])
-        elif param == 'dfilter':
-            v0 = pstring[3].strip()
-            v1 = int(v0[0])
-            if v1 == 0:
-                return '04'
-            elif v1 == 1:
-                return '07'
-            elif v1 == 2:
-                return '10'
-            elif v1 == 3:
-                filtstrings = v0[3:len(v0)-1].split(' ')
-                if filtstrings[1] == 's':
-                    return self.dfilter_vals[float(filtstrings[0])]
-                elif filtstrings[1] == 'M':
-                    return self.dfilter_vals[float(filtstrings[0]*60)]
-                else:
-                    print('Problem with filter string')
-        elif param == 'x10mode':
-            return int(pstring[4].strip()[0])
-        else:
-            print('Needs one of the following: range, excitation, exc_pct, ' +
-                  'dfilter, x10')
+            if param == 'range':
+                return int(pstring[0].strip()[0])
+            elif param == 'excitation':
+                return int(pstring[1].strip()[0])
+            elif param == 'exc_pct':
+                return int(pstring[2].strip()[:3])
+            elif param == 'dfilter':
+                v0 = pstring[3].strip()
+                v1 = int(v0[0])
+                if v1 == 0:
+                    return '04'
+                elif v1 == 1:
+                    return '07'
+                elif v1 == 2:
+                    return '10'
+                elif v1 == 3:
+                    filtstrings = v0[3:len(v0)-1].split(' ')
+                    if filtstrings[1] == 's':
+                        return self.dfilter_vals[float(filtstrings[0])]
+                    elif filtstrings[1] == 'M':
+                        return self.dfilter_vals[float(filtstrings[0]*60)]
+                    else:
+                        print('Problem with filter string')
+            elif param == 'x10mode':
+                return int(pstring[4].strip()[0])
+            else:
+                print('Needs one of the following: range, excitation, ' +
+                      'exc_pct, dfilter, x10')
+        except (ValueError, IndexError):
+            return np.nan
