@@ -118,7 +118,8 @@ class Seekat(Instrument):
 
         # Set up parameters to be called by ch#, where # is the channel (1-8)
         for i in range(1, 9):
-            self.add_parameter('ch'+str(i), set_cmd=partial(self.DAC_set, i),
+            self.add_parameter('ch'+str(i), label='ch'+str(i)+' Voltage',
+                               set_cmd=partial(self.DAC_set, i),
                                get_cmd=partial(self.DAC_get, i),
                                unit='V', vals=vals.Numbers(-10, 10))
 

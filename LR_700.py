@@ -129,6 +129,7 @@ class LR_700(VisaInstrument):
                            set_cmd='Noise I={}',
                            val_mapping={'delR': 0, 'delX': 1})
         self.add_parameter('R_offset',
+                           label='LR Resistance',
                            set_cmd='Offset {}',
                            set_parser=partial(offset_parser, 'R'),
                            get_cmd=partial(self.get_string_repeat, 'Get 4'),

@@ -81,8 +81,9 @@ class Keithley_2182a(VisaInstrument):
                            get_parser=int,
                            set_parser=parse_output_bool,
                            vals=vals.Enum(*boolcheck))
-# TODO: Change measure to get unit from the measurement type
+# TODO: Change measure to get unit from the measurement type and measure temp
         self.add_parameter('measure',
+                           label='Voltage',
                            get_cmd='SENS:DATA:FRES?',
                            get_parser=float,
                            vals=vals.Numbers(),
