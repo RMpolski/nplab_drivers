@@ -2,19 +2,22 @@ from qcodes import VisaInstrument
 import qcodes.utils.validators as vals
 from functools import partial
 import time
+import numpy as np
 
 
 def R_parser(string_out):
     newstrs = string_out.strip().split(' ')
-
-    if newstrs[1] == 'KOHM':  # kilo Ohms
-        return float(newstrs[0])*10**3
-    elif newstrs[1] == 'MOHM':
-        return float(newstrs[0])*10**-3  # I think this is probably milli Ohms
-    elif newstrs[1] == 'UOHM':  # micro Ohms
-        return float(newstrs[0])*10**-6
-    else:
-        return float(newstrs[0])
+    try:
+        if newstrs[1] == 'KOHM':  # kilo Ohms
+            return float(newstrs[0])*10**3
+        elif newstrs[1] == 'MOHM':
+            return float(newstrs[0])*10**-3  # I think this is probably mOhms
+        elif newstrs[1] == 'UOHM':  # micro Ohms
+            return float(newstrs[0])*10**-6
+        else:
+            return float(newstrs[0])
+    except Exception:
+        return np.nan
 
 
 def zfill_parser(num: int, val):
@@ -59,16 +62,17 @@ class LR_700(VisaInstrument):
 
         self.range_vals = {2e-3: 0, 20e-3: 1, 200e-3: 2, 2: 3,
                            20: 4, 200: 5, 2e3: 6, 20e3: 7, 200e3: 8,
-                           2e6: 9}
+                           2e6: 9, np.nan: np.nan}
         self.excitation_vals = {20e-6: 0, 60e-6: 1, 200e-6: 2,
-                                600e-6: 3, 2e-3: 4, 6e-3: 5, 20e-3: 6}
+                                600e-6: 3, 2e-3: 4, 6e-3: 5, 20e-3: 6,
+                                np.nan: np.nan}
         self.dfilter_vals = {0.2: '00', 0.4: '01', 0.6: '02', 0.8: '03',
                              1.0: '04', 1.6: '05', 2.0: '06', 3.0: '07',
                              5.0: '08', 7.0: '09', 10.0: '10', 15.0: '11',
                              20.0: '12', 30.0: '13', 45.0: '14', 60.0: '15',
                              90.0: '16', 120.0: '17', 180.0: '18', 300.0: '19',
                              420.0: '20', 600.0: '21', 900.0: '22',
-                             1200.0: '23', 1800.0: '24'}
+                             1200.0: '23', 1800.0: '24', np.nan: np.nan}
         self.afilter_vals = {0.01: 0, 0.1: 1, 0.3: 2, 1.0: 3, 3.0: 4, 10.0: 5,
                              30.0: 6}
 
@@ -177,6 +181,9 @@ class LR_700(VisaInstrument):
         Possible params are: range, excitation, exc_pct, dfilter, x10mode"""
 
         pstring = string_out.strip().split(',')
+        if len(pstring) != 7:
+            return np.nan
+
         if param == 'range':
             return int(pstring[0].strip()[0])
         elif param == 'excitation':
