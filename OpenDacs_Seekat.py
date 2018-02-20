@@ -52,7 +52,7 @@ def set_volt(ser, ch, volt):
     bin16 = bin(int(dec16))[2:].zfill(16)  # 16 bit binary
     d1 = int(bin16[:8], 2)  # first 8 bits
     d2 = int(bin16[8:17], 2)  # second 8 bits
-    time.sleep(0.005)
+    time.sleep(0.05)
 
     ser.write([255, 254, 253, ch_list[0], d1*ch_list[2],
               d2*ch_list[2], ch_list[1], d1*ch_list[3],
