@@ -41,7 +41,7 @@ def set_volt(ser, ch, volt):
 
     # Convert voltage to its representation
     if volt >= 0:
-        dec16 = round((2**15-1)*volt/10)
+        dec16 = round((2**15-1)*abs(volt)/10)
     else:
         dec16 = round(2**16 - abs(volt)/10.0 * 2**15)
 
@@ -49,7 +49,7 @@ def set_volt(ser, ch, volt):
     if int(dec16) == 2**16:
         dec16 = 0
 
-    bin16 = bin(dec16)[2:].zfill(16)  # 16 bit binary
+    bin16 = bin(int(dec16))[2:].zfill(16)  # 16 bit binary
     d1 = int(bin16[:8], 2)  # first 8 bits
     d2 = int(bin16[8:17], 2)  # second 8 bits
     time.sleep(0.005)
