@@ -8,11 +8,11 @@ def R_parser(string_out):
     newstrs = string_out.strip().split(' ')
 
     if newstrs[1] == 'KOHM':  # kilo Ohms
-        return float(newstrs[0])*10e3
+        return float(newstrs[0])*10**3
     elif newstrs[1] == 'MOHM':
-        return float(newstrs[0])*10e-3  # I think this is probably milli Ohms
+        return float(newstrs[0])*10**-3  # I think this is probably milli Ohms
     elif newstrs[1] == 'UOHM':  # micro Ohms
-        return float(newstrs[0])*10e-6
+        return float(newstrs[0])*10**-6
     else:
         return float(newstrs[0])
 
