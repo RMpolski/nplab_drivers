@@ -1,5 +1,22 @@
 import qcodes as qc
+import pandas as pd
 import numpy as np
+
+
+def get2d_dat(filename):
+    """Gets 2D data from qcodes .dat file.
+    Returns X, Y, Z where X and Y are the inner- and outer-loop set params,
+    and Z is the measured array"""
+    data = pd.read_csv(filename, sep='\t', header=None, comment='#',
+                       skip_blank_lines=True)
+    npdata = np.array(data)
+    Y = np.unique(npdata[:, 0])
+    X = npdata[:, 1][np.where(npdata[:, 0] == Y[0])]
+    zl = []
+    for yval in Y:
+        zl.append(npdata[:, 2][np.where(npdata[:, 0] == yval)])
+    Z = np.array(zl)
+    return X, Y, Z
 
 
 def dvdi2dfromiv(dset, instrI, Iparam, instry, yparam, instrV, Vparam,

@@ -154,7 +154,7 @@ class QD(Instrument, QDInstrument):
                            vals=vals.Numbers(-9000, 9000))
 
         self.field_rate = 15  # mT/s
-        self.temperature_rate = 10  # K/s
+        self.temperature_rate = 10  # K/min
         print('Note this uses mT units for getting and setting fields with' +
               ' field() and field_set_stable(). Just divide Oe by ' +
               '10 to get mT')
@@ -169,8 +169,9 @@ class QD(Instrument, QDInstrument):
         self.set_temperature(temperature, self.temperature_rate, 0)
         waiting = True
         startwaittime = time.time()
-        timeout = (np.abs(temp_init-temperature)/self.temperature_rate)*2 + 240
-        time.sleep((np.abs(temp_init-temperature)/self.temperature_rate)+1)
+        timeout = 60*(np.abs(temp_init-temperature)/self.temperature_rate)*2 +\
+            240
+        time.sleep(60*(np.abs(temp_init-temperature)/self.temperature_rate)+1)
         # in seconds
         while waiting:
             err, tval, status = self.get_temperature()

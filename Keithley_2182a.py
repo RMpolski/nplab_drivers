@@ -18,6 +18,7 @@ import qcodes.utils.validators as vals
 
 def parse_output_string(s):
     """ Used for mode parsing since Keithley 2812 adds an unnecessary :DC """
+    s = s.strip('" ')
     if s[-3:] == ':DC':
         s = s[:-3]
     return s
@@ -168,7 +169,7 @@ class Keithley_2182a(VisaInstrument):
         mode = parse_output_string(self.mode())
         cmd = 'SENS:{}:{}?'.format(mode, parameter)
 
-        return self.ask(cmd)
+        return self.ask(cmd).strip('" ')
 
     def _get_mode_param_chan(self, parameter: str, chan=None):
         """ Read the current Keithley mode and ask for a parameter """
@@ -178,7 +179,7 @@ class Keithley_2182a(VisaInstrument):
         cstring = 'CHAN{}'.format(chan)
         cmd = 'SENS:{}:{}:{}?'.format(mode, cstring, parameter)
 
-        return self.ask(cmd)
+        return self.ask(cmd).strip('" ')
 
     def _set_mode_param(self, parameter: str, value):
         """ Read the current Keithley mode and set a parameter """
