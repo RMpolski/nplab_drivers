@@ -130,6 +130,34 @@ class Keithley_2182a(VisaInstrument):
                            set_parser=parse_output_bool,
                            get_parser=int,
                            vals=vals.Enum(*boolcheck))
+        self.add_parameter('dfilter',
+                           get_cmd=partial(self._get_mode_param_chan, 'DFIL'),
+                           set_cmd=partial(self._set_mode_param_chan, 'DFIL'),
+                           get_parser=int,
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
+        self.add_parameter('dfilter_count',
+                           get_cmd=partial(self._get_mode_param_chan,
+                                           'DFIL:COUN'),
+                           set_cmd=partial(self._set_mode_param_chan,
+                                           'DFIL:COUN'),
+                           get_parser=int,
+                           set_parser=int,
+                           vals=vals.Ints(1, 100))
+        self.add_parameter('dfilter_window',
+                           get_cmd=partial(self._get_mode_param_chan,
+                                           'DFIL:WIND'),
+                           set_cmd=partial(self._set_mode_param_chan,
+                                           'DFIL:WIND'),
+                           get_parser=float,
+                           set_parser=float,
+                           vals=vals.Numbers(0.01, 10))
+        self.add_parameter('dfilter_type',
+                           get_cmd=partial(self._get_mode_param_chan,
+                                           'DFIL:TCON'),
+                           set_cmd=partial(self._set_mode_param_chan,
+                                           'DFIL:TCON'),
+                           vals=vals.Enum('MOV', 'REP'))
 
         self.add_function('reset', call_cmd='*RST')
         self.add_function('get_error', call_cmd='SYST:ERR?')
