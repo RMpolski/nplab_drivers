@@ -3,6 +3,30 @@ import pandas as pd
 import numpy as np
 
 
+def find_closest(value, array):
+    """Find the closest value to what is in the array and return the
+    index. In case of a tie, it chooses the first number"""
+    closest = np.argmin(np.abs(array-value))
+    return closest
+
+
+def val_to_index(valuefindarray, array):
+    """Searches in array for the values in valuefindarray. Returns a list of
+    indices.
+    If the value isn't in the array, uses the closest value"""
+    indarray = list([])
+    count = 0
+    for i in valuefindarray:
+        if np.isin(i, array):
+            indarray.append(list(array).index(i))
+        else:
+            print('{:.2f} is not a value in the array'.format(i))
+            indarray.append(find_closest(i, array))
+            print('Plotted {:.2f} instead'.format(array[int(indarray[count])]))
+        count += 1
+    return indarray
+
+
 def get2d_dat(filename):
     """Gets 2D data from qcodes .dat file.
     Returns X, Y, Z where X and Y are the inner- and outer-loop set params,
@@ -19,20 +43,26 @@ def get2d_dat(filename):
     return X, Y, Z
 
 
-def dvdi2dfromiv(dset, instrI, Iparam, instry, yparam, instrV, Vparam,
-                 diffset='dVdI'):
+def dvdi2dfromiv(dset, Iparam, yparam, Vparam, diffset='dVdI'):
     """ V is for voltage, I for current, y is the other parameter (y in 2D).
     It's intended for an I sweep, V measure situation.
+
+    Note: this is for
+    calculating dV/dI or dI/dV when current is the swept parameter and voltage
+    is measured.
+
+    Iparam, yparam, Vparam are the parameters (instr.param) used in acquiring
+    the datasets dset.
 
     Returns 3 arrays (I, Y, dVdI) or (I, Y, dIdV) that can be used to plot
     using plt.pcolormesh(I, Y, dVdI).
 
     You can change between dVdI and dIdV using keyword arg diffset
-    'dIdV' or 'dVdI'
+    'dIdV' or 'dVdI' (not case sensitive)
     """
-    Ip = instrI + '_' + Iparam + '_set'
-    yp = instry + '_' + yparam + '_set'
-    Vp = instrV + '_' + Vparam
+    Ip = str(Iparam) + '_set'
+    yp = str(yparam) + '_set'
+    Vp = str(Vparam)
 
     curr = getattr(dset, Ip)[0]
     Y = getattr(dset, yp).ndarray
@@ -50,14 +80,13 @@ def dvdi2dfromiv(dset, instrI, Iparam, instry, yparam, instrV, Vparam,
                          ' upper or lowercase')
 
 
-def concat_2d(dsets, instrx, xparam, instry, yparam, instrz, zparam):
+def concat_2d(dsets, xparam, yparam, zparam):
     """Concatenates 2D datasets. When the x direction has been partially measured
     for the top y point and has been replaced by the second array, this
     function replaces the points with the second array and concatenates the two
 
     dsets must be a tuple, of length 2 or more, of qcodes datasets
-    instr(x,y,z) must be the instrument name 'string'
-    xparam, yparam, zparam, are the parameter names (strings) used in the
+    xparam, yparam, zparam, are the parameters (instrument.param) used in the
     measurement
 
     Returns X, Y, Z, numpy arrays that can be plotted with
@@ -69,9 +98,9 @@ def concat_2d(dsets, instrx, xparam, instry, yparam, instrz, zparam):
     values. If you do, just use Z = np.nan_to_num(Z) to replace nans with 0.
     """
 
-    xp = instrx + '_' + xparam + '_set'
-    yp = instry + '_' + yparam + '_set'
-    zp = instrz + '_' + zparam
+    xp = str(xparam) + '_set'
+    yp = str(yparam) + '_set'
+    zp = str(zparam)
 
     if len(dsets) < 2:
         raise ValueError('Need tuple of length >=2 for argument')
@@ -120,14 +149,13 @@ def concat_2d(dsets, instrx, xparam, instry, yparam, instrz, zparam):
 
 
 # TODO: Make these functions work with datasets: below
-# def concat_2d_dset(dsets, instrx, xparam, instry, yparam, instrz, zparam):
+# def concat_2d_dset(dsets, xparam, yparam, zparam):
 #     """Concatenates 2D datasets. When the x direction has been partially measured
 #     for the top y point and has been replaced by the second array, this
 #     function replaces the points with the second array and concatenates the two
 #
 #     dsets must be a tuple, of length 2 or more, of qcodes datasets
-#     instr(x,y,z) must be the instrument name 'string'
-#     xparam, yparam, zparam, are the parameter names (strings) used in the
+#     xparam, yparam, zparam, are the parameter names (instr.param) used in the
 #     measurement
 #
 #     Note: xparam is for the inner loop sweep, and yparam the outer loop. Also,
@@ -137,9 +165,9 @@ def concat_2d(dsets, instrx, xparam, instry, yparam, instrz, zparam):
 #     just like the first dset
 #     """
 #
-#     xp = instrx + '_' + xparam + '_set'
-#     yp = instry + '_' + yparam + '_set'
-#     zp = instrz + '_' + zparam
+#     xp = str(xparam) + '_set'
+#     yp = str(yparam) + '_set'
+#     zp = str(zparam)
 #
 #     if len(dsets) < 2:
 #         raise ValueError('Need tuple of length >=2 for argument')

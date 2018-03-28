@@ -10,7 +10,7 @@ class time_from_start(Parameter):
     .reset() is called.
     Returns time from last reset in seconds"""
     def __init__(self, name, **kwargs):
-        super().__init__(name, get_parser=float, **kwargs)
+        super().__init__(name, get_parser=float, unit='s', **kwargs)
         self.t0 = time.time()
 
     def get_raw(self):
