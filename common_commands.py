@@ -4,8 +4,9 @@ from math import ceil
 from qcodes.instrument_drivers.nplab_drivers.time_params import time_from_start
 
 
-def single_param_sweep(SetParam, SetArray, MeasParam, SetDelay=0,
-                       DataName=''):
+def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
+                       DataName='', XParam=None, YParam=None,
+                       plot_results=True):
     """ Single parameter sweep, single measure (for more measurements, add
     parameters to the .each() part). Includes live plot.
 
@@ -15,17 +16,68 @@ def single_param_sweep(SetParam, SetArray, MeasParam, SetDelay=0,
     SetParam: The parameter to sweep (such as a voltage)
     SetArray: should be a list or numpy array of values you want to set
                 SetParam to.
-    MeasParam: The parameter you want to measure at each setpoint
+    delay: The delay time between when SetParam is set till the MeasParams
+                are measured (0 by default).
+    *MeasParam: The comma-separated parameters you want to measure at each
+                setpoint
     Keyword Arguments:
-    SetDelay: The delay time between when SetParam is set till the MeasParam
-                is measured (0 by default).
     DataName: A name to tag the data (defaults to nothing)
+    XParam: Optional, the x parameter to be used in plotting (if not used, will
+                default to the set parameter for every plot). Must be either a
+                list that is the same length as YParam, a single parameter, or
+                None.
+    YParam: Allows you to pick only a few parameters to plot out of those
+                measured.
     """
 
-    loop = qc.Loop(SetParam[SetArray], delay=SetDelay).each(MeasParam)
+    loop = qc.Loop(SetParam[SetArray], delay=delay).each(*MeasParams)
     data = loop.get_data_set(name=DataName)
-    plot = qc.QtPlot(getattr(data, str(MeasParam)))  # or can replace with x, y
-    loop.with_bg_task(plot.update, plot.save).run()
+    if plot_results:
+        if XParam is None:
+            XParam = SetParam
+
+        if len(MeasParams) == 1:
+            plot = qc.QtPlot(getattr(data, XParam), getattr(data, *MeasParams),
+                             window_title=str(XParam)+' vs. '+str(*MeasParams))
+            loop.with_bg_task(plot.update)
+        else:
+            if YParam is None:
+                YParam = MeasParams
+            if type(XParam) is not list and type(XParam) is not tuple:
+                if type(YParam) is not list and type(YParam) is not tuple:
+                    XParam = [XParam]
+                    YParam = [YParam]
+                else:
+                    XParam = [XParam]*len(MeasParams)
+            elif len(XParam) != len(YParam):
+                raise ValueError('length of XParam list must be the same as' +
+                                 'length of YParam list')
+
+            # Create a str for XParam so we can account for _set in the str
+            XParamStr = []
+            for i in range(len(XParam)):
+                xpi = str(XParam[i])
+                if xpi == str(SetParam):
+                    XParamStr.append(xpi + '_set')
+                else:
+                    XParamStr.append(xpi)
+
+            plot = []
+            for i in range(len(YParam)):
+                title = str(YParam[i]) + ' vs. ' + str(XParam[i])
+                plot.append(qc.QtPlot(getattr(data, XParamStr[i]),
+                            getattr(data, str(YParam[i])), window_title=title))
+
+            def _plot_update():
+                for p in plot:
+                    p.update()
+
+            def _plot_save():
+                for p in plot:
+                    p.save()
+
+            loop.with_bg_task(_plot_update, _plot_save)
+    loop.run()
     return data, plot
 
 
@@ -63,7 +115,7 @@ def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, MeasParam,
 
 
 def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
-             XParam=None, YParam=None):
+             XParam=None, YParam=None, plot_results=True):
     """A loop that takes measurements every "delay" seconds (starts measuring
     at startup, and each delay comes after the measurement). Either choose to
     measure N times or for minutes. The arrays of the data are: count_set
@@ -92,6 +144,8 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
             MeasParams
     YParam: optional specification of y-axis parameters to plot (if not
             specified, it will create one plot per MeasParam).
+    plot_results: if you want to do the data log without plots, set this to
+            False
     """
 
     count = qc.ManualParameter('count')
@@ -111,40 +165,46 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
                                                             qc.Wait(delay))
     data = loop.get_data_set(name=DataName)
 
-    if XParam is None:
-        XParam = time0
+    if plot_results:
+        if XParam is None:
+            XParam = time0
 
-    if len(MeasParams) == 1:
-        plot = qc.QtPlot(getattr(data, XParam), getattr(data, *MeasParams))
-        loop.with_bg_task(plot.update)
-    else:
-        if YParam is None:
-            YParam = MeasParams
-        if type(XParam) is not list and type(XParam) is not tuple:
-            if type(YParam) is not list and type(YParam) is not tuple:
-                XParam = [XParam]
-                YParam = [YParam]
-            else:
-                XParam = [XParam]*len(MeasParams)
-        elif len(XParam) != len(YParam):
-            raise ValueError('length of XParam list must be the same as' +
-                             'length of YParam list')
-        for i in range(len(XParam)):
-            if type(XParam[i]) is str:
-                if XParam[i] == 'time' or XParam[i] == 'time0':
-                    XParam[i] = time0
+        if len(MeasParams) == 1:
+            plot = qc.QtPlot(getattr(data, XParam), getattr(data, *MeasParams),
+                             window_title=str(XParam)+' vs. '+str(*MeasParams))
+            loop.with_bg_task(plot.update)
+        else:
+            if YParam is None:
+                YParam = MeasParams
+            if type(XParam) is not list and type(XParam) is not tuple:
+                if type(YParam) is not list and type(YParam) is not tuple:
+                    XParam = [XParam]
+                    YParam = [YParam]
+                else:
+                    XParam = [XParam]*len(MeasParams)
+            elif len(XParam) != len(YParam):
+                raise ValueError('length of XParam list must be the same as' +
+                                 'length of YParam list')
+            for i in range(len(XParam)):
+                if type(XParam[i]) is str:
+                    if XParam[i] == 'time' or XParam[i] == 'time0':
+                        XParam[i] = time0
 
-        plot = []
-        for i in range(len(YParam)):
-            title = str(YParam[i]) + ' vs. ' + str(XParam[i])
-            plot.append(qc.QtPlot(getattr(data, str(XParam[i])), getattr(data,
-                        str(YParam[i])), window_title=title))
+            plot = []
+            for i in range(len(YParam)):
+                title = str(YParam[i]) + ' vs. ' + str(XParam[i])
+                plot.append(qc.QtPlot(getattr(data, str(XParam[i])),
+                            getattr(data, str(YParam[i])), window_title=title))
 
-        def _plot_update():
-            for p in plot:
-                p.update()
+            def _plot_update():
+                for p in plot:
+                    p.update()
 
-        loop.with_bg_task(_plot_update)
+            def _plot_save():
+                for p in plot:
+                    p.save()
+
+            loop.with_bg_task(_plot_update, _plot_save)
     time0.reset()
     loop.run()
     return data, plot
