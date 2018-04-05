@@ -13,7 +13,8 @@ import qcodes as qc
 # from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
 # from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
 from qcodes.instrument_drivers.nplab_drivers.plot_tools import (get2d_dat,
-                                                    dvdi2dfromiv, concat_2d)
+                                                    dvdi2dfromiv, concat_2d,
+                                                    val_to_index)
 from qcodes.instrument_drivers.nplab_drivers.time_params import (
         time_from_start,
         time_stamp,
@@ -22,11 +23,8 @@ from qcodes.instrument_drivers.nplab_drivers.time_params import (
 from qcodes.instrument_drivers.nplab_drivers.common_commands import (
         single_param_sweep,
         twod_param_sweep,
-        data_log,
-        find_closest,
-        val_to_index)
+        data_log)
 
-# qc.DiskIO('pathto?')  # Doesn't seem to work. Need to find another way
 
 # Uncomment the instruments you need
 # k2182 = Keithley_2182a('k2182', 'GPIB::7::INSTR')
