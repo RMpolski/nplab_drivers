@@ -19,25 +19,25 @@ LR_700 (for a Lakeshore AC resistance bridge)
 ## Preamble and nice functions and parameters
 Looking at the file common_preamble.py, there's an example preamble of imports that the NP Group can use to easily initialize its instruments. You can also find the preamble at the bottom of this page It also imports useful functions that do the following:
 
-Functions from common_commands.py
+####Functions from common_commands.py
 single_param_sweep: takes the parameter to set, an arbitrary array of values to sweep through (can be equally incremented or not), the delay between setting and measuring, and the parameters to measure. Automatically plots all measured parameters in separate plots vs. the set parameter. Plotting can also be controlled by choosing the x and y parameters to plot. Also, you can choose a name for the dataset.
 twod_param_sweep: same, but now there are two set parameters and a set array for each
 data_log: For use when you want to measure some parameters over time. Plots the results in the same fashion as above and returns the time since the start as one of the measurements. Choose the delay (this time the delay after measurement) and the measurement parameters. You also need either a total number of measurements to take or the amount of minutes to record measurements (+ extra time added for the time it takes to perform each measurement).
 
-Imports from time_params.py
+####Imports from time_params.py
 time_from_start: a qcodes parameter with a get command that returns the time since its creation or the time since its last .reset()
 time_stamp: a qcodes parameter with a get command that returns the standard Python float that represents a time stamp in the datetime package (time in seconds since December 31, 4:00 pm, 1969)
 output_datetime: can input a number or array of numbers in the format of Python's timestamp and get an array of Python datetime objects that can be used for plotting or other functions. Also can choose the start date and time if not a standard Python timestamp.
 output_date_strings: same but outputs strings that represent the date (the string format can also be modified easily)
 
-Functions from plot_tools
+####Functions from plot_tools
 val_to_index: useful for picking out rows or columns in a 2D dataset to plot multiple 1D lines. Input the array of values to find and the array to look in, and it will return an array of where it found those values (or their nearest estimates)
 get_2d_dat: generates X, Y, Z arrays that can be used in matplotlib's pcolormesh from a qcodes .dat saved file
 dvdi2dfromiv: generates 2D dV/dI or dI/dV arrays (X, Y, Z as above) from a qcodes dataset where an IV (source current, measure voltage) sweep was done
 concat_2d: Adds and sews in 2D qcodes datasets to each other and outputs X, Y, Z arrays as above. Assumes the x-parameter (or inner loop) is the same for each dataset
 
 
-## Calculated parameters
+### Calculated parameters
 Also note that you can make a calculated parameter pretty easily. If the value provided by instr.param() needs
 to have an operation done to it before you want it displayed in the
 measurement, use a parameter defined this way. Define your own function that
@@ -83,7 +83,7 @@ Then instantiate the driver using, e.g. k6 = Keithley_6221('k6', 'GPIB::12::INST
 
 
 ## Common Preamble for nplab drivers
-"""
+```
 import numpy as np
 import matplotlib.pyplot as plt
 import qcodes as qc
@@ -118,4 +118,4 @@ from qcodes.instrument_drivers.nplab_drivers.common_commands import (
 # seekat = Seekat('seekat', timeout=8)
 # dacadc = DAC_ADC('dacadc', timeout=8)
 # lr700 = LR_700('lr700', 'GPIB::?::INSTR')
-"""
+```
