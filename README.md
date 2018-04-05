@@ -16,7 +16,7 @@ Seekat (also from openDacs)
 LR_700 (for a Lakeshore AC resistance bridge)
 
 
-## Preamble and nice functions and parameters
+## Preamble, useful functions and parameters
 Looking at the file common_preamble.py, there's an example preamble of imports that the NP Group can use to easily initialize its instruments. You can also find the preamble at the bottom of this page It also imports useful functions that do the following:
 
 ####Functions from common_commands.py
