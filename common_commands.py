@@ -183,7 +183,8 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
             XParam = time0
 
         if len(MeasParams) == 1:
-            plot = qc.QtPlot(getattr(data, XParam), getattr(data, *MeasParams),
+            plot = qc.QtPlot(getattr(data, str(XParam)),
+                             getattr(data, str(*MeasParams)),
                              window_title=str(XParam)+' vs. '+str(*MeasParams))
             loop.with_bg_task(plot.update)
         else:
