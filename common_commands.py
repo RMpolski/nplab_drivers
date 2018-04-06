@@ -78,8 +78,8 @@ def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
                     p.save()
 
             loop.with_bg_task(_plot_update, _plot_save)
-    loop.run()
     try:
+        loop.run()
         return data, plot
     except KeyboardInterrupt:
         _plot_update()
