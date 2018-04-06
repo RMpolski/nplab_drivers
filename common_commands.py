@@ -90,7 +90,9 @@ def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
 def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, MeasParam,
                      SetDelay1=0, SetDelay2=0, DataName=''):
     """ Single parameter sweep, single measure (for more measurements, add
-    parameters to the .each() part). Includes live plot.
+    parameters to the .each() part). Includes live plot. Note: if the SetParam1
+    array is nonuniform, the y axis of the plot will be messed up. Try MatPlot
+    instead of QtPlot in that situation.
 
     Returns: data (a qcodes DataSet object), plot
 
