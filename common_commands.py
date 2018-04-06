@@ -78,7 +78,12 @@ def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
 
             loop.with_bg_task(_plot_update, _plot_save)
     loop.run()
-    return data, plot
+    try:
+        return data, plot
+    except KeyboardInterrupt:
+        _plot_update()
+        _plot_save()
+        return data, plot
 
 
 def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, MeasParam,
@@ -111,7 +116,12 @@ def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, MeasParam,
     data = twodloop.get_data_set(name=DataName)
     plot = qc.QtPlot(getattr(data, str(MeasParam)))
     twodloop.with_bg_task(plot.update, plot.save).run()
-    return data, plot
+    try:
+        return data, plot
+    except KeyboardInterrupt:
+        plot.update()
+        plot.save()
+        return data, plot
 
 
 def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
@@ -207,7 +217,12 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
             loop.with_bg_task(_plot_update, _plot_save)
     time0.reset()
     loop.run()
-    return data, plot
+    try:
+        return data, plot
+    except KeyboardInterrupt:
+        _plot_update()
+        _plot_save()
+        return data, plot
 
 
 # Calculated parameter outline. If the value provided by instr.param() needs
