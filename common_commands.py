@@ -82,8 +82,6 @@ def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
         loop.run()
         return data, plot
     except KeyboardInterrupt:
-        _plot_update()
-        _plot_save()
         return data, plot
 
 
