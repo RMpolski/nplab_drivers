@@ -27,11 +27,28 @@ def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
                 list that is the same length as YParam, a single parameter, or
                 None.
     YParam: Allows you to pick only a few parameters to plot out of those
-                measured.
+                measured. (if not mentioned, will plot all *MeasParams)
+    plot_results: True by default, if false, suppresses plotting
     """
 
     loop = qc.Loop(SetParam[SetArray], delay=delay).each(*MeasParams)
     data = loop.get_data_set(name=DataName)
+    plot = []
+
+    def _plot_update():
+        if type(plot) is list:
+            for p in plot:
+                p.update()
+        else:
+            plot.update()
+
+    def _plot_save():
+        if type(plot) is list:
+            for p in plot:
+                p.save()
+        else:
+            plot.save()
+
     if plot_results:
         if XParam is None:
             XParam = SetParam
@@ -63,30 +80,39 @@ def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
                 else:
                     XParamStr.append(xpi)
 
-            plot = []
+            # plot = []
             for i in range(len(YParam)):
                 title = str(YParam[i]) + ' vs. ' + str(XParam[i])
                 plot.append(qc.QtPlot(getattr(data, XParamStr[i]),
                             getattr(data, str(YParam[i])), window_title=title))
 
-            def _plot_update():
-                for p in plot:
-                    p.update()
-
-            def _plot_save():
-                for p in plot:
-                    p.save()
+            # def _plot_update():
+            #     if type(plot) is list:
+            #         for p in plot:
+            #             p.update()
+            #     else:
+            #         plot.update()
+            #
+            # def _plot_save():
+            #     if type(plot) is list:
+            #         for p in plot:
+            #             p.save()
+            #     else:
+            #         plot.save()
 
             loop.with_bg_task(_plot_update, _plot_save)
     try:
         loop.run()
         return data, plot
     except KeyboardInterrupt:
+        _plot_update()
+        _plot_save()
+        print('Keyboard Interrupt')
         return data, plot
 
 
 def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, MeasParam,
-                     SetDelay1=0, SetDelay2=0, DataName=''):
+                     SetDelay1=0, SetDelay2=0, DataName='', plot_results=True):
     """ Single parameter sweep, single measure (for more measurements, add
     parameters to the .each() part). Includes live plot. Note: if the SetParam1
     array is nonuniform, the y axis of the plot will be messed up. Try MatPlot
@@ -109,19 +135,25 @@ def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, MeasParam,
     SetDelay2: Delay time between when SetParam2 is set and the MeasParam
                 is measured (0 by default)
     DataName: A name to tag the data (defaults to nothing)
+    plot_results: True by default, if false, suppresses plotting
     """
 
     twodloop = qc.Loop(SetParam1[SetArray1],
                        delay=SetDelay1).loop(SetParam2[SetArray2],
                                              delay=SetDelay2).each(MeasParam)
     data = twodloop.get_data_set(name=DataName)
-    plot = qc.QtPlot(getattr(data, str(MeasParam)))
-    twodloop.with_bg_task(plot.update, plot.save).run()
+    plot = []
+    if plot_results:
+        plot = qc.QtPlot(getattr(data, str(MeasParam)))
+        twodloop.with_bg_task(plot.update, plot.save)
     try:
+        twodloop.run()
         return data, plot
     except KeyboardInterrupt:
-        plot.update()
-        plot.save()
+        if plot_results:
+            plot.update()
+            plot.save()
+        print('Keyboard Interrupt')
         return data, plot
 
 
@@ -175,6 +207,21 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
                                                             *MeasParams,
                                                             qc.Wait(delay))
     data = loop.get_data_set(name=DataName)
+    plot = []
+
+    def _plot_update():
+        if type(plot) is list:
+            for p in plot:
+                p.update()
+        else:
+            plot.update()
+
+    def _plot_save():
+        if type(plot) is list:
+            for p in plot:
+                p.save()
+        else:
+            plot.save()
 
     if plot_results:
         if XParam is None:
@@ -202,28 +249,29 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
                     if XParam[i] == 'time' or XParam[i] == 'time0':
                         XParam[i] = time0
 
-            plot = []
+            # plot = []
             for i in range(len(YParam)):
                 title = str(YParam[i]) + ' vs. ' + str(XParam[i])
                 plot.append(qc.QtPlot(getattr(data, str(XParam[i])),
                             getattr(data, str(YParam[i])), window_title=title))
 
-            def _plot_update():
-                for p in plot:
-                    p.update()
-
-            def _plot_save():
-                for p in plot:
-                    p.save()
+            # def _plot_update():
+            #     for p in plot:
+            #         p.update()
+            #
+            # def _plot_save():
+            #     for p in plot:
+            #         p.save()
 
             loop.with_bg_task(_plot_update, _plot_save)
-    time0.reset()
-    loop.run()
     try:
+        time0.reset()
+        loop.run()
         return data, plot
     except KeyboardInterrupt:
         _plot_update()
         _plot_save()
+        print('Keyboard Interrupt')
         return data, plot
 
 
