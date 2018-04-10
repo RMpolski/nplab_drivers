@@ -3,6 +3,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import qcodes as qc
+import os
+
+
+## Change directory to our base directory (or another, if you want)
+os.chdir('C:/Users/TFRLab/Documents/Data/Users/NPLab/qcodes_data')
+
 ## Uncomment instruments that you need
 # from qcodes.instrument_drivers.tektronix.Keithley_2000 import Keithley_2000
 # from qcodes.instrument_drivers.nplab_drivers.Keithley_6221 import Keithley_6221
