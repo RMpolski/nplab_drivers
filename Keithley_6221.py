@@ -432,7 +432,6 @@ class Keithley_6221(VisaInstrument):
         # TODO: Possibly provide checker to see if step divides stop-step
 
         self.write('TRAC:POIN {}'.format(self._delta_points))
-        print(self.ask('TRAC:POIN {}'))
         self.write('SOUR:DCON:ARM')
 
         self.sweep_current = np.linspace(start, stop, self._delta_points)
