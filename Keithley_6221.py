@@ -408,6 +408,7 @@ class Keithley_6221(VisaInstrument):
             self.write('SOUR:DCON:STEP {}'.format(step))
             self._delta_points = int(round(np.abs((stop-start)/step)+1))
         elif step is None and num is not None:
+            num = num - 1
             stepsize = (stop-start)/(num-1)
             self.write('SOUR:DCON:STEP {}'.format(stepsize))
             self._delta_points = num
@@ -422,11 +423,11 @@ class Keithley_6221(VisaInstrument):
         else:
             self.write('SOUR:DCON:CAB OFF')
 
-        # calculate number of points
+
         # TODO: Possibly provide checker to see if step divides stop-step
 
         self.write('TRAC:POIN {}'.format(self._delta_points))
-
+        print(self.ask('TRAC:POIN {}'))
         self.write('SOUR:DCON:ARM')
 
         self.sweep_current = np.linspace(start, stop, self._delta_points)
