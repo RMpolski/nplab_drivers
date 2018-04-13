@@ -403,7 +403,17 @@ class Keithley_6221(VisaInstrument):
 
         self.write('SOUR:DCON:STAR {}'.format(start))
         self.write('SOUR:DCON:STOP {}'.format(stop))
-        self.write('SOUR:DCON:STEP {}'.format(step))
+
+        if step is not None:
+            self.write('SOUR:DCON:STEP {}'.format(step))
+            self._delta_points = int(round(np.abs((stop-start)/step)+1))
+        elif step is None and num is not None:
+            stepsize = (stop-start)/(num-1)
+            self.write('SOUR:DCON:STEP {}'.format(stepsize))
+            self._delta_points = num
+        elif (step is None and num is None) or (step is not None and num is not None):
+            print('Need to provide step or num')
+            return
         self.write('SOUR:DCON:DELT {}'.format(delta))
         self.write('SOUR:DCON:DEL {}'.format(delay))
 
@@ -414,13 +424,7 @@ class Keithley_6221(VisaInstrument):
 
         # calculate number of points
         # TODO: Possibly provide checker to see if step divides stop-step
-        if step is not None:
-            self._delta_points = int(round(np.abs((stop-start)/step)+1))
-        elif step is None and num is not None:
-            self._delta_points = num-1
-        elif (step is None and num is None) or (step is not None and num is not None):
-            print('Need to provide step or num')
-            return
+
         self.write('TRAC:POIN {}'.format(self._delta_points))
 
         self.write('SOUR:DCON:ARM')
