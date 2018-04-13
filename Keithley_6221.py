@@ -417,7 +417,7 @@ class Keithley_6221(VisaInstrument):
         if step is not None:
             self._delta_points = int(round(np.abs((stop-start)/step)+1))
         elif step is None and num is not None:
-            self._delta_points = num
+            self._delta_points = num-1
         elif (step is None and num is None) or (step is not None and num is not None):
             print('Need to provide step or num')
             return
