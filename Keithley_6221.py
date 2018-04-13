@@ -249,11 +249,17 @@ class Keithley_6221(VisaInstrument):
                     _vals[int(i/2)] = _floatdata[i]
                 else:
                     _times[int((i-1)/2)] = _floatdata[i]
+            if len(_vals) == self._delta_points + 1:
+                _vals = _vals[1:]
+            if len(_times) == self._delta_points + 1:
+                _times = _times[1:]
             return (_vals, _times)
         else:
             for i in range(len(_floatdata)):
                 if np.mod(i, 2) == 0:
                     _vals[int(i/2)] = _floatdata[i]
+            if len(_vals) == self._delta_points + 1:
+                _vals = _vals[1:]
             return _vals
 
     def const_delta_setup(self, high: Union[int, float], points: int, delay=0,
@@ -408,7 +414,6 @@ class Keithley_6221(VisaInstrument):
             self.write('SOUR:DCON:STEP {}'.format(step))
             self._delta_points = int(round(np.abs((stop-start)/step)+1))
         elif step is None and num is not None:
-            num = num - 1
             stepsize = (stop-start)/(num-1)
             self.write('SOUR:DCON:STEP {}'.format(stepsize))
             self._delta_points = num
