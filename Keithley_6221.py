@@ -352,7 +352,8 @@ class Keithley_6221(VisaInstrument):
             self._delta_time_meas = False
 
     def delta_diff_setup(self, start: Union[int, float],
-                         stop: Union[int, float], step: Union[int, float],
+                         stop: Union[int, float], step: Union[int, float]=None,
+                         num: Union[int, float]=None,
                          delta: Union[int, float]=1e-6,
                          delay=0, cab: bool=False, timemeas: bool=False):
         """ Sets up (doesn't run yet) the 6221 and 2182(a) into Delta
@@ -413,7 +414,13 @@ class Keithley_6221(VisaInstrument):
 
         # calculate number of points
         # TODO: Possibly provide checker to see if step divides stop-step
-        self._delta_points = int(round(np.abs((stop-start)/step)+1))
+        if step is not None:
+            self._delta_points = int(round(np.abs((stop-start)/step)+1))
+        elif step is None and num is not None:
+            self._delta_points = num
+        elif (step is None and num is None) or (step is not None and num is not None):
+            print('Need to provide step or num')
+            return
         self.write('TRAC:POIN {}'.format(self._delta_points))
 
         self.write('SOUR:DCON:ARM')
