@@ -607,5 +607,6 @@ class Keithley_6221(VisaInstrument):
         2182. It seems that first, the ask command returns a newline for the
         first command and then the value afterward"""
 
-        nothing = self.ask('SYST:COMM:SER:SEND "{}"\nSYST:COMM:SER:ENT?'.format(cmd))
-        return self.visa_handle.read()
+        val = self.ask('SYST:COMM:SER:SEND "{}"\nSYST:COMM:SER:ENT?'.format(cmd))
+        nothing = self.visa_handle.read()
+        return val
