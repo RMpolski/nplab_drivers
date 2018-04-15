@@ -13,6 +13,7 @@ from qcodes import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter, MultiParameter
 import qcodes.utils.validators as vals
 import time
+from functools import partial
 
 boolcheck = (0, 1, 'on', 'off', 'ON', 'OFF', False, True)
 
@@ -133,12 +134,14 @@ class Keithley_6221(VisaInstrument):
                            get_parser=str,
                            vals=vals.Enum('slow', 'fast', 'SLOW', 'FAST'))
         self.add_parameter('display',
+                           snapshot_get=False,
                            get_cmd='DISP:ENAB?',
                            set_cmd='DISP:ENAB {}',
                            get_parser=int,
                            set_parser=parse_output_bool,
                            vals=vals.Enum(*boolcheck))
         self.add_parameter('beeper',
+                           snapshot_get=False,
                            get_cmd='SYST:BEEP?',
                            set_cmd='SYST:BEEP {}',
                            get_parser=int,
@@ -163,7 +166,7 @@ class Keithley_6221(VisaInstrument):
         self.add_parameter('diff_arm',
                            get_cmd='SOUR:DCON:ARM?',
                            get_parser=int)
-        self.add_parameter('delta_IV_sweep',
+        self.add_parameter('delta_IV_sweep',  # STILL A WORK IN PROGRESS
                            snapshot_get=False,
                            get_cmd=self.delta_IV_sweep_get,
                            set_cmd=self.delta_IV_sweep_set,
@@ -171,30 +174,72 @@ class Keithley_6221(VisaInstrument):
                            set_parser=float)
         # The following are only settable for now
         # TODO: find a way to change the visa read command to
-        # SYST:COMM:SER:ENT?
+        # SYST:COMM:SER:ENT? - I THINK I FOUND IT!
+        self.add_parameter('k2_measure',
+                           snapshot_get=False,
+                           get_cmd=partial(self.k2_read_cmd,
+                                           'SENS:DATA:FRES?'),
+                           get_parser=float,
+                           unit='V')
+
+
         self.add_parameter('k2_range',
                            snapshot_get=False,
                            set_cmd='SYST:COMM:SER:SEND "VOLT:RANG {}"',
+                           get_cmd=partial(self.k2_read_cmd, 'VOLT:RANG?'),
+                           set_parser=float,
+                           get_parser=float,
                            vals=vals.Numbers(0, 120))
         self.add_parameter('k2_nplc',
                            snapshot_get=False,
                            set_cmd='SYST:COMM:SER:SEND "VOLT:NPLC {}"',
+                           get_cmd=partial(self.k2_read_cmd, 'VOLT:NPLC?'),
+                           set_parser=float,
+                           get_parser=float,
                            vals=vals.Numbers(0.01, 60))
         self.add_parameter('k2_line_sync',
                            snapshot_get=False,
                            set_cmd='SYST:COMM:SER:SEND "SYST:LSYN {}"',
+                           get_cmd=partial(self.k2_read_cmd, 'SYST:LSYN?'),
                            set_parser=parse_output_bool,
+                           get_parser=int,
                            vals=vals.Enum(*boolcheck))
         self.add_parameter('k2_front_autozero',
                            snapshot_get=False,
                            set_cmd='SYST:COMM:SER:SEND "SYST:FAZ {}"',
+                           get_cmd=partial(self.k2_read_cmd, 'SYST:FAZ?'),
                            set_parser=parse_output_bool,
+                           get_parser=int,
                            vals=vals.Enum(*boolcheck))
         self.add_parameter('k2_autozero',
                            snapshot_get=False,
                            set_cmd='SYST:COMM:SER:SEND "SYST:AZER {}"',
+                           get_cmd=partial(self.k2_read_cmd, 'SYST:AZER?'),
                            set_parser=parse_output_bool,
+                           get_parser=int,
                            vals=vals.Enum(*boolcheck))
+        self.add_parameter('k2_dfilter_count',
+                           snapshot_get=False,
+                           get_cmd=partial(self.k2_read_cmd,
+                                           'SENS:VOLT:DFIL:COUN?'),
+                           set_cmd='SYST:COMM:SER:SEND "SENS:VOLT:DFIL:COUN {}"',
+                           get_parser=int,
+                           set_parser=int,
+                           vals=vals.Ints(1, 100))
+        self.add_parameter('k2_dfilter_window',
+                           snapshot_get=False,
+                           get_cmd=partial(self.k2_read_cmd,
+                                           'SENS:VOLT:DFIL:WIND?'),
+                           set_cmd='SYST:COMM:SER:SEND "SENS:VOLT:DFIL:WIND {}"',
+                           get_parser=float,
+                           set_parser=float,
+                           vals=vals.Numbers(0.01, 10))
+        self.add_parameter('dfilter_type',
+                           snapshot_get=False,
+                           get_cmd=partial(self.k2_read_cmd,
+                                           'SENS:VOLT:DFIL:TCON?'),
+                           set_cmd='SYST:COMM:SER:SEND "SENS:VOLT:DFIL:TCON {}"',
+                           vals=vals.Enum('MOV', 'REP'))
 
         self.add_function('abort_arm', call_cmd='SOUR:SWE:ABOR')
         self.add_function('reset', call_cmd='*RST')
@@ -552,3 +597,15 @@ class Keithley_6221(VisaInstrument):
                 if np.mod(i, 2) == 0 and i > 0:
                     _vals[int((i-2)/2)] = _floatdata[i]
         return np.average(_vals)
+
+    # Now a function for reading from the k2182 when plugged into the 6221
+    # through an RS-232 port
+
+    def k2_read_cmd(self, cmd):
+        """ pyvisa seems to requires two read
+        commands to get the value of something when it's requested from the
+        2182. It seems that first, the ask command returns a newline for the
+        first command and then the value afterward"""
+
+        nothing = self.ask('SYST:COMM:SER:SEND "{}"\nSYST:COMM:SER:ENT?'.format(cmd))
+        return self.visa_handle.read()
