@@ -49,7 +49,7 @@ def OhmsfromI():
 
 paramname = qc.Parameter('paramname', get_cmd=OhmsfromI, label='Resistance',
                          unit='Ohms')
-                         
+
 
 ## Directions for setup:
 Install Anaconda form https://www.anaconda.com/download/
@@ -104,7 +104,8 @@ os.chdir('C:/Users/TFRLab/Documents/Data/Users/NPLab/qcodes_data')
 # from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
 from qcodes.instrument_drivers.nplab_drivers.plot_tools import (get2d_dat,
                                                     dvdi2dfromiv, concat_2d,
-                                                    val_to_index)
+                                                    val_to_index,
+                                                    iv_from_dvdi)
 from qcodes.instrument_drivers.nplab_drivers.time_params import (
         time_from_start,
         time_stamp,
