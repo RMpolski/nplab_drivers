@@ -1,6 +1,7 @@
 import qcodes as qc
 import pandas as pd
 import numpy as np
+from scipy.integrate import cumtrapz
 
 
 def find_closest(value, array):
@@ -25,6 +26,16 @@ def val_to_index(valuefindarray, array):
             print('Plotted {:.2f} instead'.format(array[int(indarray[count])]))
         count += 1
     return indarray
+
+
+def iv_from_dvdi(dvdi, x, axis=1):
+    """ Returns a cumulative integral array from a 2d array dvdi, integrating
+    each row by default (choose axis=0 for integrating over columns) and
+    somewhat artificially sets the 0 point of x to the 0 point of V"""
+
+    V = cumtrapz(dvdi, x=x, axis=axis, initial=0)
+
+    return V - V[:, val_to_index([0], x)]
 
 
 def get2d_dat(filename):
