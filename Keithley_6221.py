@@ -234,7 +234,7 @@ class Keithley_6221(VisaInstrument):
                            get_parser=float,
                            set_parser=float,
                            vals=vals.Numbers(0.01, 10))
-        self.add_parameter('dfilter_type',
+        self.add_parameter('k2_dfilter_type',
                            snapshot_get=False,
                            get_cmd=partial(self.k2_read_cmd,
                                            'SENS:VOLT:DFIL:TCON?'),

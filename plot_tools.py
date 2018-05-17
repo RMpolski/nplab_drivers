@@ -4,6 +4,17 @@ import numpy as np
 from scipy.integrate import cumtrapz
 
 
+def mov_average(array, window):
+    """A simple moving average function with a window size. Calculates the
+    average of the first number of points in the window, shifts by one point,
+    calculates the average, and so on until the end of the array.
+
+    array: the array from which to calculate the moving average
+    window: (must be integer) the amount of points in each average
+    """
+    return np.convolve(array, np.ones((window,))/window, mode='valid')
+
+
 def find_closest(value, array):
     """Find the closest value to what is in the array and return the
     index. In case of a tie, it chooses the first number"""
