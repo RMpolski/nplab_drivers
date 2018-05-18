@@ -89,6 +89,11 @@ class Keithley_2182a(VisaInstrument):
                            get_parser=float,
                            vals=vals.Numbers(),
                            unit='V')
+        self.add_parameter('read',
+                           label='Voltage',
+                           get_cmd=':READ?',
+                           get_parser=float,
+                           unit='V')
         self.add_parameter('nplc',
                            get_cmd=partial(self._get_mode_param, 'NPLC',),
                            set_cmd=partial(self._set_mode_param, 'NPLC'),
