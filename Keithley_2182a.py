@@ -57,6 +57,7 @@ class Keithley_2182a(VisaInstrument):
         # autorange
         self.vranges = [[0.01, 0.1, 1., 10., 100.], [0.1, 1, 10]]  # not used
         self.tempranges = []  # not used at the moment
+        self.trigreadstart = False
 
         self.add_parameter('mode',
                            get_cmd='SENS:FUNC?',
@@ -88,6 +89,11 @@ class Keithley_2182a(VisaInstrument):
                            get_cmd='SENS:DATA:FRES?',
                            get_parser=float,
                            vals=vals.Numbers(),
+                           unit='V')
+        self.add_parameter('trigread',
+                           label='Voltage',
+                           get_cmd=self._trigread_get,
+                           get_parser=float,
                            unit='V')
         self.add_parameter('read',
                            label='Voltage',
@@ -263,3 +269,23 @@ class Keithley_2182a(VisaInstrument):
             return self.ask('UNIT:TEMP?')
         else:
             raise ValueError('Mode must be VOLT or TEMP')
+            
+    def _trigread_get(self):
+        """ Returns the result of a triggered acquisition (starts trigger sequence if not initiated already)"""
+        if self.trigreadstart is False:
+            self.write('TRIG:SOUR BUS')
+            self.write('INIT:CONT OFF')
+            self.write('INIT')
+        
+        self.write('*TRG')
+        return self.ask('SENS:DATA:FRES?')
+    
+    def trigabort(self):
+        """ Aborts a triggered read sequence (see _trigread_get() function) """
+        if self.trigreadstart is True or self.ask('TRIG:SOUR?') == 'BUS':
+            self.write('ABORT')
+            self.write('TRIG:SOUR IMM')
+            self.write('INIT:CONT ON')
+            self.trigreadstart = False
+        else:
+            print('Not in a triggered measurement state')
