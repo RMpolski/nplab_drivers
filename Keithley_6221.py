@@ -172,16 +172,16 @@ class Keithley_6221(VisaInstrument):
                            set_cmd=self.delta_IV_sweep_set,
                            get_parser=float,
                            set_parser=float)
-        # The following are only settable for now
-        # TODO: find a way to change the visa read command to
-        # SYST:COMM:SER:ENT? - I THINK I FOUND IT!
+
+        # These are only useable if you have connected to the Keithley 2182
+        # Through an RS-232 port. Make sure to check the settings on the 2182
+        # at set to GPIB: off, RS-232 on
         self.add_parameter('k2_measure',
                            snapshot_get=False,
                            get_cmd=partial(self.k2_read_cmd,
                                            'SENS:DATA:FRES?'),
                            get_parser=float,
                            unit='V')
-
 
         self.add_parameter('k2_range',
                            snapshot_get=False,
