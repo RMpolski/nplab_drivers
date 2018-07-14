@@ -85,6 +85,10 @@ class Keithley_6221(VisaInstrument):
         """
         super().__init__(name, address, terminator='\n', **kwargs)
 
+        self._ac_init = False
+        self._ac_ampl = False
+        self._ac_freq = False
+
         self.add_parameter('current',
                            label='Current',
                            get_cmd='SOUR:CURR?',
@@ -147,6 +151,53 @@ class Keithley_6221(VisaInstrument):
                            get_parser=int,
                            set_parser=parse_output_bool,
                            vals=vals.Enum(*boolcheck))
+
+        self.add_parameter('AC_amplitude',
+                           get_cmd='SOUR:WAVE:AMPL?',
+                           set_cmd=self._setac_amplitude,
+                           get_parser=float,
+                           unit='A',
+                           vals=vals.Numbers(2e-12, 0.105))
+        self.add_parameter('AC_frequency',
+                           get_cmd='SOUR:WAVE:FREQ?',
+                           set_cmd=self._setac_frequency,
+                           get_parser=float,
+                           unit='Hz',
+                           vals=vals.Numbers(0, 1e5))
+        self.add_parameter('AC_offset',
+                           get_cmd='SOUR:WAVE:OFFS?',
+                           set_cmd='SOUR:WAVE:OFFS {}',
+                           get_parser=float,
+                           unit='A',
+                           vals=vals.Numbers(-0.105, 0.105))
+        self.add_parameter('AC_duration_time',
+                           get_cmd='SOUR:WAVE:DUR:TIME?',
+                           set_cmd='SOUR:WAVE:DUR:TIME {}',
+                           get_parser=float,
+                           unit='s',
+                           vals=vals.MultiType(vals.Enum('INF'),
+                                               vals.Numbers(100e-9,
+                                                            999999.999)))
+        self.add_parameter('AC_duration_cycles',
+                           get_cmd='SOUR:WAVE:DUR:CYCL?',
+                           set_cmd='SOUR:WAVE:DUR:CYCL {}',
+                           get_parser=float,
+                           unit='cycles',
+                           vals=vals.MultiType(vals.Enum('INF'),
+                                               vals.Numbers(0.001,
+                                                            99999999900)))
+        self.add_parameter('AC_phasemark',
+                           get_cmd='SOUR:WAVE:PMAR:STAT?',
+                           set_cmd='SOUR:WAVE:PMAR:STAT {}',
+                           get_parser=int,
+                           set_parser=parse_output_bool,
+                           vals=vals.Enum(*boolcheck))
+        self.add_parameter('AC_phasemark_offset',
+                           get_cmd='SOUR:WAVE:PMAR?',
+                           set_cmd='SOUR:WAVE:PMAR {}',
+                           get_parser=float,
+                           unit='degrees',
+                           vals=vals.Numbers(0, 360))
 
         # Related to attached 2182(a) nanovoltmeter
         self.add_parameter('unit',
@@ -250,6 +301,44 @@ class Keithley_6221(VisaInstrument):
             self.reset()
 
         self.connect_message()
+
+    def _setac_amplitude(self, amp):
+        """This is just the helper function for the AC_amplitude parameter"""
+        if self._ac_freq is False:
+            print('Must enter frequency')
+        if self._ac_init is False:
+            self.write('SOUR:WAVE:FUNC SIN')
+            self.write('SOUR:WAVE:AMPL {}'.format(amp))
+        else:
+            self.write('SOUR:WAVE:AMPL {}'.format(amp))
+        self._ac_ampl = True
+
+    def _setac_frequency(self, freq):
+        """This is just the helper function for the AC_frequency parameter"""
+        if self._ac_ampl is False:
+            print('Must enter amplitude')
+        if self._ac_init is False:
+            self.write('SOUR:WAVE:FUNC SIN')
+            self.write('SOUR:WAVE:FREQ {}'.format(freq))
+        else:
+            self.write('SOUR:WAVE:FREQ {}'.format(freq))
+        self._ac_freq = True
+
+    def AC_init(self):
+        if self._ac_freq is False:
+            print('Must enter frequency')
+        if self._ac_ampl is False:
+            print('Must enter amplitude')
+        self.write('SOUR:WAVE:ARM')
+        self.write('SOUR:WAVE:INIT')
+        self._ac_init = True
+
+    def abort_AC(self):
+        if self._ac_init is False:
+            print('Already aborted')
+        else:
+            self.write('SOUR:WAVE:ABOR')
+            self._ac_init = False
 
     def delta_trigger_return(self):
         """ Triggers, waits, parses, and returns the results of a delta sweep.

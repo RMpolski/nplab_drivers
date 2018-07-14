@@ -192,7 +192,8 @@ class Keithley_2182a(VisaInstrument):
                        'Now the temp is {} C\n'.format(currtemp) +
                        'Do you want to proceed with low-level calibration?' +
                        ' [y/n] ')
-        b = answer == 'y' and parse_output_string(self.mode()).lower() == 'volt'
+        b = (answer == 'y' and
+             parse_output_string(self.mode()).lower() == 'volt')
         b = b and float(parse_output_string(self.range())) == 0.01
         if b:
             self.write('CAL:UNPR:ACAL:STEP2')
@@ -271,7 +272,8 @@ class Keithley_2182a(VisaInstrument):
             raise ValueError('Mode must be VOLT or TEMP')
 
     def _trigread_get(self):
-        """ Returns the result of a triggered acquisition (starts trigger sequence if not initiated already)"""
+        """ Returns the result of a triggered acquisition (starts trigger
+         sequence if not initiated already)"""
         if self.trigreadstart is False:
             self.write('TRIG:SOUR BUS')
             self.write('INIT:CONT OFF')
