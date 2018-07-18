@@ -44,10 +44,12 @@ def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
 
     def _plot_save():
         if type(plot) is list:
-            for p in plot:
-                p.save()
+            for i in range(len(plot)):
+                fname = '{}_{}.png'.format(plot[i].get_default_title(), str(XParam[i])+'vs'+str(YParam[i]))
+                plot[i].save(filename=fname)
         else:
-            plot.save()
+            fname = '{}_{}.png'.format(plot.get_default_title(), str(XParam)+'vs'+str(*MeasParams))
+            plot.save(filename=fname)
 
     if plot_results:
         if XParam is None:
@@ -80,39 +82,26 @@ def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
                 else:
                     XParamStr.append(xpi)
 
-            # plot = []
             for i in range(len(YParam)):
                 title = str(YParam[i]) + ' vs. ' + str(XParam[i])
                 plot.append(qc.QtPlot(getattr(data, XParamStr[i]),
                             getattr(data, str(YParam[i])), window_title=title))
 
-            # def _plot_update():
-            #     if type(plot) is list:
-            #         for p in plot:
-            #             p.update()
-            #     else:
-            #         plot.update()
-            #
-            # def _plot_save():
-            #     if type(plot) is list:
-            #         for p in plot:
-            #             p.save()
-            #     else:
-            #         plot.save()
-
-            loop.with_bg_task(_plot_update, _plot_save)
+            loop.with_bg_task(_plot_update)
     try:
         loop.run()
+        _plot_save()
         return data, plot
     except KeyboardInterrupt:
-        _plot_update()
-        _plot_save()
+        if plot_results:
+            _plot_update()
+            _plot_save()
         print('Keyboard Interrupt')
         return data, plot
 
 
-def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, MeasParam,
-                     SetDelay1=0, SetDelay2=0, DataName='', plot_results=True):
+def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, *MeasParams,
+                     SetDelay1=0, SetDelay2=0, DataName='', ZParam=None, plot_results=True):
     """ Single parameter sweep, single measure (for more measurements, add
     parameters to the .each() part). Includes live plot. Note: if the SetParam1
     array is nonuniform, the y axis of the plot will be messed up. Try MatPlot
@@ -128,31 +117,63 @@ def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, MeasParam,
     SetArray1: should be a list or numpy array of values you want to set
                 SetParam2 to. This array will be run through for each value of
                 SetArray1
-    MeasParam: The parameter you want to measure at each setpoint
+    MeasParams: The parameter(s) you want to measure at each setpoint
     Keyword Arguments:
     SetDelay1: The delay time between when SetParam1 is set till the SetParam2
                 is set to its first value (0 by default)
     SetDelay2: Delay time between when SetParam2 is set and the MeasParam
                 is measured (0 by default)
     DataName: A name to tag the data (defaults to nothing)
+    ZParam: Allows you to pick only a few parameters to plot out of those
+                measured. (if not mentioned, will plot all *MeasParams)
     plot_results: True by default, if false, suppresses plotting
     """
 
     twodloop = qc.Loop(SetParam1[SetArray1],
                        delay=SetDelay1).loop(SetParam2[SetArray2],
-                                             delay=SetDelay2).each(MeasParam)
+                                             delay=SetDelay2).each(*MeasParams)
     data = twodloop.get_data_set(name=DataName)
     plot = []
+
+    def _plot_update():
+        if type(plot) is list:
+            for p in plot:
+                p.update()
+        else:
+            plot.update()
+
+    def _plot_save():
+        if type(plot) is list:
+            for i in range(len(plot)):
+                fname = '{}_{}.png'.format(plot[i].get_default_title(), str(ZParam[i]))
+                plot[i].save(filename=fname)
+        else:
+            fname = '{}_{}.png'.format(plot.get_default_title(), str(*MeasParams))
+            plot.save(filename=fname)
+
     if plot_results:
-        plot = qc.QtPlot(getattr(data, str(MeasParam)))
-        twodloop.with_bg_task(plot.update, plot.save)
+        if len(MeasParams) == 1:
+            plot = qc.QtPlot(getattr(data, str(*MeasParams)), window_title=str(*MeasParams))
+            twodloop.with_bg_task(plot.update)
+        else:
+            if ZParam is None:
+                ZParam = MeasParams
+            if type(ZParam) is not list and type(ZParam) is not tuple:
+                ZParam = [ZParam]
+
+            for zp in ZParam:
+                plot.append(qc.QtPlot(getattr(data, str(zp)), window_title=str(zp)))
+
+            twodloop.with_bg_task(_plot_update)
+
     try:
         twodloop.run()
+        _plot_save()
         return data, plot
     except KeyboardInterrupt:
         if plot_results:
-            plot.update()
-            plot.save()
+            _plot_update()
+            _plot_save()
         print('Keyboard Interrupt')
         return data, plot
 
