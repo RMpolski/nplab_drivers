@@ -43,7 +43,7 @@ def DAC_setvolt(ser, ch, volt):
     ser.write(s.encode('utf-8'))
     mes = ser.readline().decode('utf-8')
     # TODO: Calibrate and remove printed statements
-    print(mes)  # Comment this out to remove printed statements
+    # print(mes)  # Uncomment this to bring back printed statements
     # set_ch = mes.split(' ')[1]  # Uncomment to get the set channel
     set_volt = mes.split(' ')[4].split('V')[0]
     return float(set_volt)  # can include channel with , set_ch
