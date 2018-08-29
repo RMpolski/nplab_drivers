@@ -179,7 +179,7 @@ def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, *MeasParams,
 
 
 def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
-             XParam=None, YParam=None, plot_results=True):
+             XParam=None, YParam=None, plot_results=True, breakif=None):
     """A loop that takes measurements every "delay" seconds (starts measuring
     at startup, and each delay comes after the measurement). Either choose to
     measure N times or for minutes. The arrays of the data are: count_set
@@ -210,7 +210,12 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
             specified, it will create one plot per MeasParam).
     plot_results: if you want to do the data log without plots, set this to
             False
+    breakif: specify a parameterless function that returns true when the break
+            condition is met (example ppms temperature < 2.01)
     """
+    if breakif is None:
+        def breakif():
+            pass
 
     count = qc.ManualParameter('count')
     time0 = time_from_start('time0')
@@ -221,12 +226,16 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
     elif N is not None and minutes is None:
         loop = qc.Loop(count.sweep(1, int(N), step=1)).each(time0,
                                                             *MeasParams,
-                                                            qc.Wait(delay))
+                                                            qc.Wait(delay),
+                                                            qc.BreakIf(
+                                                                breakif))
     elif minutes is not None and N is None:
         N = ceil(minutes*60/delay)
         loop = qc.Loop(count.sweep(1, int(N), step=1)).each(time0,
                                                             *MeasParams,
-                                                            qc.Wait(delay))
+                                                            qc.Wait(delay),
+                                                            qc.BreakIf(
+                                                                breakif))
     data = loop.get_data_set(name=DataName)
     plot = []
 
