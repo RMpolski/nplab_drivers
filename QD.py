@@ -134,13 +134,13 @@ class QD(Instrument, QDInstrument):
                            unit='K',
                            get_cmd=self.temperature_get_cmd,
                            set_cmd=self.temperature_set_release,
-                           vals=vals.Numbers(1.7, 400))
+                           vals=vals.Numbers(1.6, 400))
         self.add_parameter('temperature_set_stable',
                            label='Temperature',
                            unit='K',
                            get_cmd=self.temperature_get_cmd,
                            set_cmd=self.temperature_stable,
-                           vals=vals.Numbers(1.7, 400))
+                           vals=vals.Numbers(1.6, 400))
         self.add_parameter('field',
                            label='Magnetic Field',
                            unit='mT',
@@ -184,7 +184,7 @@ class QD(Instrument, QDInstrument):
                 if time.time() - startwaittime > timeout:
                     waiting = False
                     print('Temperature timeout')
-            qc.Wait(0.25)
+            qc.Wait(0.5)
         return
 
     def temperature_set_release(self, temperature: Union[int, float]):

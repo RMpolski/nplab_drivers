@@ -198,6 +198,12 @@ class Keithley_6221(VisaInstrument):
                            get_parser=float,
                            unit='degrees',
                            vals=vals.Numbers(0, 360))
+        self.add_parameter('AC_ranging',
+                           get_cmd='SOUR:WAVE:RANG?',
+                           set_cmd='SOUR:WAVE:RANG {}',
+                           get_parser=str,
+                           vals=vals.Enum('BEST', 'best', 'FIX', 'fix',
+                                          'FIXED', 'fixed'))
 
         # Related to attached 2182(a) nanovoltmeter
         self.add_parameter('unit',
