@@ -1,7 +1,6 @@
 from qcodes import Instrument
 import qcodes.utils.validators as vals
 from qcodes.utils.helpers import strip_attrs
-from functools import partial
 import serial
 
 
@@ -29,7 +28,10 @@ class vdpArduino(Instrument):
         self._confign = None
 
     def _open_serial_connection(self, timeout=None):
-        ser = serial.Serial(self.address, 9600, timeout)
+        if timeout is None:
+            ser = serial.Serial(self.address, 9600)
+        else:
+            ser = serial.Serial(self.address, 9600, timeout=timeout)
         print(ser.isOpen())
         if not (ser.isOpen()):
             ser.open()

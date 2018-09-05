@@ -106,7 +106,10 @@ class DAC_ADC(Instrument):
             self.reset()
 
     def _open_serial_connection(self, timeout=None):
-        ser = serial.Serial(self.address, 115200, timeout)
+        if timeout is None:
+            ser = serial.Serial(self.address, 115200)
+        else:
+            ser = serial.Serial(self.address, 115200, timeout=timeout)
         print(ser.isOpen())
         if not (ser.isOpen()):
             ser.open()
