@@ -23,9 +23,10 @@ class vdpArduino(Instrument):
         self._open_serial_connection(timeout)
 
         self.add_parameter('config', set_cmd=self._bytes_write,
-                           get_cmd=self._bytes_read,
-                           get_parser=int,
+                           get_cmd=self._getcn,
                            vals=vals.Ints(1, 6))
+
+        self._confign = None
 
     def _open_serial_connection(self, timeout=None):
         ser = serial.Serial(self.address, 9600, timeout)
@@ -50,8 +51,13 @@ class vdpArduino(Instrument):
         self.remove_instance(self)
 
     def _bytes_write(self, n):
+        self._confign = n
         self._ser.write(str(n).encode('utf-8'))
         return
 
-    def _bytes_read(self):
-        return self._ser.readline().decode('utf-8')
+    def _getcn(self):
+        if self._confign is None:
+            print('Need to input a configuration first')
+            return None
+        else:
+            return self._confign
