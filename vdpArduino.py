@@ -28,7 +28,7 @@ class vdpArduino(Instrument):
                            vals=vals.Ints(1, 6))
 
     def _open_serial_connection(self, timeout=None):
-        ser = serial.Serial(self.address, 115200, timeout)
+        ser = serial.Serial(self.address, 9600, timeout)
         print(ser.isOpen())
         if not (ser.isOpen()):
             ser.open()
