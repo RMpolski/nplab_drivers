@@ -30,10 +30,34 @@ class QDInstrument:
         get_temperature(): returns error code, temp, status
         set_field(field, rate, approach, mode): returns error.
                 Approach 0 is linear,
-                Mode 0 works (fast settle?)
-        get_field(): returns error, field, status. Status 4 is stable
+                Approach 1 is No Overshoot
+                Approach 2 is Oscillate
+                Mode 0 works. Not sure if other modes do anything
+        get_field(): returns error, field, status
+            Status 0: Magnet Unknown (just still needs to be initialized
+                                to some value)
+            1: Stable Persistent (This magnet doesn't
+                                    have a persistent function)
+            2: Warming Switch (not applicable)
+            3: Cooling Switch (not applicable)
+            4: Stable Driven (This is the stable function for this magnet)
+            5: Iterating (means it's almost there)
+            6: Charging (means it's ramping)
+            7: Discharging (also ramping)
+            8: Current Error
+            15: Magnet Failure
         set_chamber(code): Returns error. Not sure how the codes work here.
-        get_chamber(): returns error, status. Not sure how these work either.
+        get_chamber(): returns error, status
+            Status 0: undefined
+            1: Purged
+            2: ?
+            3: Vented
+            4: Purging
+            5: ?
+            6: Pre-HiVac
+            7: HiVac
+            8: pumping (from pump continuous)
+            9: Flooding (venting)
         """
     def __init__(self, instrument_type):
         instrument_type = instrument_type.upper()
@@ -52,7 +76,8 @@ class QDInstrument:
 
     def set_temperature(self, temperature, rate, mode):
         """Sets temperature and returns MultiVu error code.
-        Mode 0 is Fast Settle. Mode 1 is No Overshoot"""
+        Mode 0 is Fast Settle
+        Mode 1 is No Overshoot"""
         err = self._mvu.SetTemperature(temperature, rate, mode)
         return err
 
@@ -78,7 +103,11 @@ class QDInstrument:
 
     def set_field(self, field, rate, approach, mode):
         """Sets field and returns MultiVu error code.
-        Approach 1 is No Overshoot. Approach 0 is Linear. Mode 0 works"""
+        Approach 0 is Linear
+        Approach 1 is No Overshoot
+        Approach 2 is Oscillate
+
+        Mode 0 works. Not sure what mode means"""
         err = self._mvu.SetField(field, rate, approach, mode)
         return err
 
@@ -110,7 +139,17 @@ class QDInstrument:
         return err
 
     def get_chamber(self):
-        """Gets chamber status and returns (MultiVu error, status)"""
+        """Gets chamber status and returns (MultiVu error, status)
+        0: undefined
+        1: Purged
+        2: ?
+        3: Vented
+        4: Purging
+        5: ?
+        6: Pre-HiVac
+        7: HiVac
+        8: pumping (from pump continuous)
+        9: Flooding (venting)"""
         arg0 = win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_I4, 0)
         err = self._mvu.GetChamber(arg0)
         return err, arg0.value
