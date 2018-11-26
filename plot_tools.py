@@ -42,11 +42,27 @@ def val_to_index(valuefindarray, array):
 def iv_from_dvdi(dvdi, x, axis=1):
     """ Returns a cumulative integral array from a 2d array dvdi, integrating
     each row by default (choose axis=0 for integrating over columns) and
-    somewhat artificially sets the 0 point of x to the 0 point of V"""
+    somewhat artificially sets the 0 point of x to the 0 point of V
 
-    V = cumtrapz(dvdi, x=x, axis=axis, initial=0)
+    Inputs:
+    dvdi is either a 2d array or a 1d array of a derivative with respect to
+            the next argument
+    x: the x-axis argument used to integrate
+    axis: only necessary for 2d arrays. Selects the direction in which to
+    integrate.
 
-    return V - V[:, val_to_index([0], x)]
+    Returns: an integrated array, with the same shape as the input (either 2d
+        or 1d), where the 0 point of the array x is set to 0"""
+
+    if len(np.array(dvdi).shape) == 2:
+        V = cumtrapz(dvdi, x=x, axis=axis, initial=0)
+        return V - V[:, val_to_index([0], x)]
+    elif len(np.array(dvdi).shape) == 1:
+        V = cumtrapz(dvdi, x=x, initial=0)
+        return V - V[val_to_index([0], x)]
+    else:
+        raise ValueError('Problem with the array shape. Accepts only 2d or' +
+                         '1d arrays')
 
 
 def get2d_dat(filename):
