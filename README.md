@@ -83,10 +83,6 @@ import qcodes as qc
 import os
 import time
 
-
-## Change directory to our base directory (or another, if you want)
-#os.chdir('C:/Users/TFRLab/Documents/Data/Users/NPLab/qcodes_data')
-
 ## Uncomment instruments that you need
 from qcodes.instrument_drivers.tektronix.Keithley_2000 import Keithley_2000
 from qcodes.instrument_drivers.nplab_drivers.Keithley_6221 import Keithley_6221
@@ -111,7 +107,6 @@ from qcodes.instrument_drivers.nplab_drivers.common_commands import (
         single_param_sweep,
         twod_param_sweep,
         data_log)
-
 
 # Uncomment the instruments you need
 # k2182 = Keithley_2182a('k2182', 'GPIB::7::INSTR')
