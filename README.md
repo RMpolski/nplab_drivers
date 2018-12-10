@@ -45,7 +45,7 @@ paramname = qc.Parameter('paramname', get_cmd=OhmsfromI, label='Resistance',
 
 
 ## Directions for setup:
-Install Anaconda form https://www.anaconda.com/download/
+Install Anaconda from https://www.anaconda.com/download/
 
 Download the environment.yml file from the QCodes page (https://raw.githubusercontent.com/QCoDeS/Qcodes/master/environment.yml) and use "conda env create -f path-to-environment.yml" to set up the environment called "qcodes".
 
@@ -117,7 +117,7 @@ from qcodes.instrument_drivers.nplab_drivers.common_commands import (
 # seekat = Seekat('seekat', 'COM6', timeout=8)
 # dacadc = DAC_ADC('dacadc', 'COM9', timeout=8)
 # lr700 = LR_700('lr700', 'GPIB::18::INSTR')
-lockin1 = SR830('lockin1', 'GPIB0::9::INSTR')
+# lockin1 = SR830('lockin1', 'GPIB0::9::INSTR')
 # lockin2 = SR830('lockin2', 'GPIB0::8::INSTR')
 # vdp = vdpArduino('vdp', 'COM10', timeout=6)
 ```
