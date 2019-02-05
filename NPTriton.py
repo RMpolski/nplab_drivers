@@ -541,7 +541,7 @@ class Triton(IPInstrument):
     def _parse_valve_state(self, msg):
         if 'NOT_FOUND' in msg:
             return None
-        state = float(msg.split(':')[-1].strip())
+        state = msg.split(':')[-1].strip()
         return state
 
     def _parse_pump_speed(self, msg):
