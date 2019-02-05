@@ -19,6 +19,19 @@ def parse_outp_bool(value):
     elif type(value) is str:
         value = value.lower()
     elif value in {1, 'on', True}:
+        return 1
+    elif value in {0, 'off', False}:
+        return 0
+    else:
+        raise ValueError('Must be boolean, on or off, 0 or 1, True or False')
+
+
+def parse_inp_bool(value):
+    if type(value) is float:
+        value = int(value)
+    elif type(value) is str:
+        value = value.lower()
+    elif value in {1, 'on', True}:
         return 'ON'
     elif value in {0, 'off', False}:
         return 'OFF'
@@ -26,24 +39,22 @@ def parse_outp_bool(value):
         raise ValueError('Must be boolean, on or off, 0 or 1, True or False')
 
 
+boolcheck = (0, 1, 'on', 'off', 'ON', 'OFF', False, True)
+
+
 class Triton(IPInstrument):
     r"""
     Triton Driver
 
     Args:
-        tmpfile: Optional: an exported windows registry file from the registry
-            path:
-            `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
-            and is used to extract the available temperature channels.
+        address: IP or host address for the ethernet connection
+        port: the connection port number
 
-
-    Status: beta-version.
         TODO:
         fetch registry directly from fridge-computer
     """
 
-    def __init__(self, name, address=None, port=None,
-                 tmpfile=None, timeout=20, **kwargs):
+    def __init__(self, name, address=None, port=None, timeout=20, **kwargs):
         super().__init__(name, address=address, port=port,
                          terminator='\r\n', timeout=timeout, **kwargs)
 
@@ -51,6 +62,7 @@ class Triton(IPInstrument):
         self._heater_range_temp = [0.03, 0.1, 0.3, 1, 12, 40]
         self._heater_range_curr = [0.316, 1, 3.16, 10, 31.6, 100]
         self._control_channel = 5
+        self._first_magnet_use = False
 
         self.add_parameter(name='time',
                            label='System Time',
@@ -76,16 +88,20 @@ class Triton(IPInstrument):
         self.add_parameter(name='pid_mode',
                            label='PID Mode',
                            get_cmd=partial(self._get_control_param, 'MODE'),
+                           get_parser=parse_outp_bool,
                            set_cmd=partial(self._set_control_param, 'MODE'),
-                           val_mapping={'on':  'ON', 'off': 'OFF'})
+                           set_parser=parse_inp_bool,
+                           vals=Enum(*boolcheck))
 
         self.add_parameter(name='pid_ramp',
                            label='PID ramp enabled',
                            get_cmd=partial(self._get_control_param,
                                            'RAMP:ENAB'),
+                           get_parser=parse_outp_bool,
                            set_cmd=partial(self._set_control_param,
                                            'RAMP:ENAB'),
-                           val_mapping={'on':  'ON', 'off': 'OFF'})
+                           set_parser=parse_inp_bool,
+                           vals=Enum(*boolcheck))
 
         self.add_parameter(name='pid_setpoint',
                            label='PID temperature setpoint',
@@ -112,7 +128,6 @@ class Triton(IPInstrument):
 
         self.add_parameter(name='magnet_status',
                            label='Magnet status',
-                           unit='',
                            get_cmd=partial(self._get_control_B_param, 'ACTN'))
 
         self.add_parameter(name='magnet_sweeprate',
@@ -127,77 +142,112 @@ class Triton(IPInstrument):
                            unit='T/min',
                            get_cmd=partial(self._get_control_B_param, 'RFST'))
 
+        self.add_parameter(name='magnet_swh',
+                           lable='Magnet persistent switch heater',
+                           set_cmd=self._set_swh,
+                           set_parser=parse_inp_bool,
+                           get_cmd='READ:SYS:VRM:SWHT',
+                           get_parser=self._parse_swh,
+                           vals=Enum(*boolcheck))
+
+        self.add_parameter(name='magnet_POC',
+                           label='Persistent after completing sweep?',
+                           set_cmd='SET:SYS:VRM:POC:{}',
+                           set_parser=parse_inp_bool,
+                           get_cmd='READ:SYS:VRM:POC',
+                           get_parser=parse_outp_bool,
+                           vals=Enum(*boolcheck))
+
         self.add_parameter(name='B',
                            label='Magnetic field',
                            unit='T',
                            get_cmd=partial(self._get_control_B_param, 'VECT'))
 
-        self.add_parameter(name='Bx',
-                           label='Magnetic field x-component',
-                           unit='T',
-                           get_cmd=partial(
-                               self._get_control_Bcomp_param, 'VECTBx'),
-                           set_cmd=partial(self._set_control_Bx_param))
+        # self.add_parameter(name='Bx',
+        #                    label='Magnetic field x-component',
+        #                    unit='T',
+        #                    get_cmd=partial(
+        #                        self._get_control_Bcomp_param, 'VECTBx'),
+        #                    set_cmd=partial(self._set_control_Bx_param))
+        #
+        # self.add_parameter(name='By',
+        #                    label='Magnetic field y-component',
+        #                    unit='T',
+        #                    get_cmd=partial(
+        #                        self._get_control_Bcomp_param, 'VECTBy'),
+        #                    set_cmd=partial(self._set_control_By_param))
 
-        self.add_parameter(name='By',
-                           label='Magnetic field y-component',
+        self.add_parameter(name='field',
+                           label='B',
                            unit='T',
-                           get_cmd=partial(
-                               self._get_control_Bcomp_param, 'VECTBy'),
-                           set_cmd=partial(self._set_control_By_param))
+                           get_cmd=self._get_field,
+                           set_cmd=partial(self._set_field_return))
 
-        self.add_parameter(name='Bz',
-                           label='Magnetic field z-component',
+        self.add_parameter(name='field_set_stable',
+                           label='B',
                            unit='T',
-                           get_cmd=partial(
-                               self._get_control_Bcomp_param, 'VECTBz'),
-                           set_cmd=partial(self._set_control_Bz_param))
+                           get_cmd=self._get_field,
+                           set_cmd=partial(self._set_field_stable))
 
         self.add_parameter(name='magnet_sweep_time',
                            label='Magnet sweep time',
                            unit='T/min',
                            get_cmd=partial(self._get_control_B_param, 'RVST:TIME'))
 
-        self.chan_alias = {}
-        self.chan_temp_names = {}
-        if tmpfile is not None:
-            self._get_temp_channel_names(tmpfile)
+        self.add_parameter(name='turbo_speed',
+                           unit='Hz',
+                           get_cmd='READ:DEV:TURB1:PUMP:SIG:SPD',
+                           get_parser=self._parse_pump_speed)
+
+        self.chan_alias = {'MC': 'T8', 'MC_cernox': 'T5', 'still': 'T3',
+                           'cold_plate': 'T4', 'magnet': 'T13', 'PT2h': 'T1',
+                           'PT2p': 'T2', 'PT1h': 'T6', 'PT1p': 'T7'}
+        self._get_named_temp_channels()
         self._get_temp_channels()
         self._get_pressure_channels()
         self._get_valve_channels()
 
-        try:
-            self._get_named_channels()
-        except:
-            logging.warning('Ignored an error in _get_named_channels\n' +
-                            format_exc())
+
+
 
         self.connect_message()
 
-    def set_B(self, x, y, z, s):
-        if 0 < s <= 0.2:
-            self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
-                       ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
-            self.write('SET:SYS:VRM:ACTN:RTOS\r\n')
-            t_wait = self.magnet_sweep_time() * 60 + 10
-            print('Please wait ' + str(t_wait) +
-                  ' seconds for the field sweep...')
-            sleep(t_wait)
-        else:
-            print('Warning: set magnet sweep rate in range (0 , 0.205] T/min')
+    # def set_B(self, x, y, z, s):
+    #     if 0 < s <= 0.205:
+    #         self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
+    #                    ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
+    #         self.write('SET:SYS:VRM:ACTN:RTOS\r\n')
+    #         t_wait = self.magnet_sweep_time() * 60 + 10
+    #         print('Please wait ' + str(t_wait) +
+    #               ' seconds for the field sweep...')
+    #         sleep(t_wait)
+    #     else:
+    #         print('Warning: set magnet sweep rate in range (0 , 0.205] T/min')
+
+    def read_valves(self):
+        for i in range(1, 10):
+            print('V{}:  {}'.format(i, getattr(self, 'V%d' % i)()))
+
+    def read_pumps(self):
+        print('Turbo: {},  speed: {} Hz'.format(self.turbo(), self.turbo_speed()))
+        print('KNF: {}'.format(self.knf()))
+        print('Forepump: {}'.format(self.forepump()))
 
     def _get_control_B_param(self, param):
         cmd = 'READ:SYS:VRM:{}'.format(param)
         return self._get_response_value(self.ask(cmd))
 
-    def _get_control_Bcomp_param(self, param):
-        cmd = 'READ:SYS:VRM:{}'.format(param)
-        return self._get_response_value(self.ask(cmd[:-2]) + cmd[-2:])
+    # def _get_control_Bcomp_param(self, param):
+    #     cmd = 'READ:SYS:VRM:{}'.format(param)
+    #     return self._get_response_value(self.ask(cmd[:-2]) + cmd[-2:])
+
+    def _get_field(self):
+        return float(self.ask('READ:SYS:VRM:VECT').split(' ')[-1].strip('T]'))
 
     def _get_response(self, msg):
         return msg.split(':')[-1]
 
-    def _get_response_value(self, msg):
+    def _get_response_value(self, msg):  #TODO need to correct this to make it more readable and include NPERS and PERS, HOLD, SAFE, etc.
         msg = self._get_response(msg)
         if msg.endswith('NOT_FOUND'):
             return None
@@ -205,12 +255,12 @@ class Triton(IPInstrument):
             return 'IDLE'
         elif msg.endswith('RTOS'):
             return 'RTOS'
-        elif msg.endswith('Bx'):
-            return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[0])
-        elif msg.endswith('By'):
-            return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[1])
-        elif msg.endswith('Bz'):
-            return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[2])
+        # elif msg.endswith('Bx'):
+        #     return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[0])
+        # elif msg.endswith('By'):
+        #     return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[1])
+        # elif msg.endswith('Bz'):
+        #     return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[2])
         elif len(re.findall(r"[-+]?\d*\.\d+|\d+", msg)) > 1:
             return [float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[0]), float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[1]), float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[2])]
         try:
@@ -268,58 +318,122 @@ class Triton(IPInstrument):
             print(
                 'Warning: set sweeprate in range (0 , 0.205] T/min, not setting sweeprate')
 
-    def _set_control_Bx_param(self, x):
+    # def _set_control_Bx_param(self, x):
+    #     s = self.magnet_sweeprate()
+    #     y = round(self.By(), 4)
+    #     z = round(self.Bz(), 4)
+    #     self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
+    #                ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
+    #     self.write('SET:SYS:VRM:ACTN:RTOS\r\n')
+    #     # just to give an time estimate, +10s for overhead
+    #     t_wait = self.magnet_sweep_time() * 60 + 10
+    #     print('Please wait ' + str(t_wait) + ' seconds for the field sweep...')
+    #     while self.magnet_status() != 'IDLE':
+    #         pass
+    #
+    # def _set_control_By_param(self, y):
+    #     s = self.magnet_sweeprate()
+    #     x = round(self.Bx(), 4)
+    #     z = round(self.Bz(), 4)
+    #     self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
+    #                ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
+    #     self.write('SET:SYS:VRM:ACTN:RTOS\r\n')
+    #     # just to give an time estimate, +10s for overhead
+    #     t_wait = self.magnet_sweep_time() * 60 + 10
+    #     print('Please wait ' + str(t_wait) + ' seconds for the field sweep...')
+    #     while self.magnet_status() != 'IDLE':
+    #         pass
+
+    def _set_field_stable(self, z):
+        if self._first_magnet_use is False:
+            usecheck = input('Are you sure you want to use the magnet? [y/n]: ')
+        if usecheck.lower() == 'y':
+            self._first_magnet_use is True
+            pass
+        else:
+            print('Magnet will not be used')
+            return
+
+        magtemp = self.magnet_temp()
+        while magtemp >= 4.25:
+            print('The magnet temperature is {} K. '.format(magtemp) +
+                  'Waiting for it to drop < 4.25 K')
+            sleep(15)
+            magtemp = self.magnet_temp()
+
         s = self.magnet_sweeprate()
-        y = round(self.By(), 4)
-        z = round(self.Bz(), 4)
+        x = 0
+        y = 0
         self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
-                   ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
-        self.write('SET:SYS:VRM:ACTN:RTOS\r\n')
+                   ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']')
+        self.write('SET:SYS:VRM:ACTN:RTOS')
         # just to give an time estimate, +10s for overhead
         t_wait = self.magnet_sweep_time() * 60 + 10
-        print('Please wait ' + str(t_wait) + ' seconds for the field sweep...')
+        print('Please wait ' + str(t_wait) + ' seconds for the field sweep, ' +
+              'plus the time required for operating the switch...')
         while self.magnet_status() != 'IDLE':
             pass
 
-    def _set_control_By_param(self, y):
+    def _set_field_return(self, z):
+        if self._first_magnet_use is False:
+            usecheck = input('Are you sure you want to use the magnet? [y/n]: ')
+        if usecheck.lower() == 'y':
+            self._first_magnet_use is True
+            pass
+        else:
+            print('Magnet will not be used')
+            return
+
+        magtemp = self.magnet_temp()
+        while magtemp >= 4.25:
+            print('The magnet temperature is {} K. '.format(magtemp) +
+                  'Waiting for it to drop < 4.25 K')
+            sleep(15)
+            magtemp = self.magnet_temp()
+
         s = self.magnet_sweeprate()
-        x = round(self.Bx(), 4)
-        z = round(self.Bz(), 4)
+        x = 0
+        y = 0
         self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
-                   ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
-        self.write('SET:SYS:VRM:ACTN:RTOS\r\n')
+                   ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']')
+        self.write('SET:SYS:VRM:ACTN:RTOS')
         # just to give an time estimate, +10s for overhead
         t_wait = self.magnet_sweep_time() * 60 + 10
-        print('Please wait ' + str(t_wait) + ' seconds for the field sweep...')
-        while self.magnet_status() != 'IDLE':
-            pass
+        print('Sweep time approximately ' + str(t_wait) + ' seconds')
+        return
 
-    def _set_control_Bz_param(self, z):
-        s = self.magnet_sweeprate()
-        x = round(self.Bx(), 4)
-        y = round(self.By(), 4)
-        self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
-                   ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
-        self.write('SET:SYS:VRM:ACTN:RTOS\r\n')
-        # just to give an time estimate, +10s for overhead
-        t_wait = self.magnet_sweep_time() * 60 + 10
-        print('Please wait ' + str(t_wait) + ' seconds for the field sweep...')
-        while self.magnet_status() != 'IDLE':
-            pass
+    def _set_swh(self, val):
+        if val == 'ON':
+            self.write('SET:SYS:VRM:ACTN:NPERS')
+            print('Wait 5 min for the switch to warm')
+            while self.magnet_status() != 'IDLE':
+                pass
+        elif val == 'OFF':
+            self.write('SET:SYS:VRM:ACT:PERS')
+            print('Wait 5 min for the switch to cool')
+            while self.magnet_status() != 'IDLE':
+                pass
+        else:
+            raise ValueError('Should be a boolean value (ON, OFF)')
 
-    def _get_named_channels(self):
-        allchans = self.ask('READ:SYS:DR:CHAN')
-        allchans = allchans.replace('STAT:SYS:DR:CHAN:', '', 1).split(':')
-        for ch in allchans:
-            msg = 'READ:SYS:DR:CHAN:%s' % ch
-            rep = self.ask(msg)
-            if 'INVALID' not in rep and 'NONE' not in rep:
-                alias, chan = rep.split(':')[-2:]
-                self.chan_alias[alias] = chan
-                self.add_parameter(name=alias,
-                                   unit='K',
-                                   get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
-                                   get_parser=self._parse_temp)
+    def _get_named_temp_channels(self):
+        for al in tuple(self.chan_alias):
+            chan = self.chan_alias[al]
+            self.add_parameter(name=al+'_temp',
+                               unit='K',
+                               get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
+                               get_parser=self._parse_temp)
+            self.add_parameter(name=al+'_temp_enable',
+                               get_cmd='READ:DEV:%s:TEMP:MEAS:ENAB' % chan,
+                               get_parser=self._parse_state,
+                               set_cmd='SET:DEV:%s:TEMP:MEAS:ENAB:{}' % chan,
+                               set_parser=parse_inp_bool,
+                               vals=Enum(*boolcheck))
+            if al == 'MC':
+                self.add_parameter(name='MC_Res',
+                                   unit='Ohms',
+                                   get_cmd='READ:DEV:%s:TEMP:SIG:RES' % chan,
+                                   get_parser=self._parse_res)
 
     def _get_pressure_channels(self):
         self.chan_pressure = []
@@ -339,38 +453,21 @@ class Triton(IPInstrument):
             self.chan_valves.append(chan)
             self.add_parameter(name=chan,
                                get_cmd='READ:DEV:%s:VALV:SIG:STATE' % chan,
-                               get_parser=self._parse_state)
+                               get_parser=self._parse_valve_state)
         self.chan_valves = set(self.chan_valves)
 
     def _get_pump_channels(self):
         self.chan_pumps = ['turbo', 'knf', 'forepump']
         self.add_parameter(name='turbo',
                            get_cmd='READ:DEV:TURB1:PUMP:SIG:STATE',
-                           get_parser=parse_outp_bool)
+                           get_parser=self._parse_state)
         self.add_parameter(name='knf',
                            get_cmd='READ:DEV:COMP:PUMP:SIG:STATE',
-                           get_parser=parse_outp_bool)
+                           get_parser=self._parse_state)
         self.add_parameter(name='forepump',
                            get_cmd='READ:DEV:FP:PUMP:SIG:STATE',
                            get_parser=self._parse_state)
         self.chan_pumps = set(self.chan_pumps)
-
-    def _get_temp_channel_names(self, file):
-        config = configparser.ConfigParser()
-        with open(file, 'r', encoding='utf16') as f:
-            next(f)
-            config.read_file(f)
-
-        for section in config.sections():
-            options = config.options(section)
-            namestr = '"m_lpszname"'
-            if namestr in options:
-                chan_number = int(section.split('\\')[-1].split('[')[-1]) + 1
-                # the names used in the register file are base 0 but the api and the gui
-                # uses base one names so add one
-                chan = 'T' + str(chan_number)
-                name = config.get(section, '"m_lpszname"').strip("\"")
-                self.chan_temp_names[chan] = {'name': name, 'value': None}
 
     def _get_temp_channels(self):
         self.chan_temps = []
@@ -381,6 +478,12 @@ class Triton(IPInstrument):
                                unit='K',
                                get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
                                get_parser=self._parse_temp)
+            self.add_parameter(name=chan+'_enable',
+                               get_cmd='READ:DEV:%s:TEMP:MEAS:ENAB' % chan,
+                               get_parser=self._parse_state,
+                               set_cmd='SET:DEV:%s:TEMP:MEAS:ENAB:{}',
+                               set_parser=parse_inp_bool,
+                               vals=Enum(*boolcheck))
         self.chan_temps = set(self.chan_temps)
 
     def _parse_action(self, msg):
@@ -428,8 +531,35 @@ class Triton(IPInstrument):
     def _parse_state(self, msg):
         if 'NOT_FOUND' in msg:
             return None
-        state = float(msg.split('SIG:STATE:')[-1].strip())
+        state = float(msg.split(':')[-1].strip())
         return parse_outp_bool(state)
+
+    def _parse_valve_state(self, msg):
+        if 'NOT_FOUND' in msg:
+            return None
+        state = float(msg.split(':')[-1].strip())
+        return state
+
+    def _parse_pump_speed(self, msg):
+        if 'NOT_FOUND' in msg:
+            return None
+        return float(msg.split('SIG:SPD:')[-1].strip('Hz'))
+
+    def _parse_res(self, msg):
+        if 'NOT_FOUND' in msg:
+            return None
+        return float(msg.split(':')[-1].strip('Ohm'))
+
+    def _parse_swh(self, msg):
+        if 'NOT_FOUND' in msg:
+            return None
+        elif msg.split(' ').strip(']') == 'ON':
+            return 1
+        elif msg.split(' ').strip(']') == 'OFF':
+            return 0
+        else:
+            print('unknown switch heater state')
+            return msg
 
     def _recv(self):
         return super()._recv().rstrip()
