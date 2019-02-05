@@ -205,9 +205,7 @@ class Triton(IPInstrument):
         self._get_temp_channels()
         self._get_pressure_channels()
         self._get_valve_channels()
-
-
-
+        self._get_pump_channels()
 
         self.connect_message()
 
@@ -533,7 +531,7 @@ class Triton(IPInstrument):
     def _parse_state(self, msg):
         if 'NOT_FOUND' in msg:
             return None
-        state = float(msg.split(':')[-1].strip())
+        state = msg.split(':')[-1].strip()
         return parse_outp_bool(state)
 
     def _parse_valve_state(self, msg):
