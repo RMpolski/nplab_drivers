@@ -403,6 +403,7 @@ class Triton(IPInstrument):
 
     def _set_swh(self, val):
         val = parse_inp_bool(val)
+        print(val)
         if val == 'ON':
             self.write('SET:SYS:VRM:ACTN:NPERS')
             print('Wait 5 min for the switch to warm')
