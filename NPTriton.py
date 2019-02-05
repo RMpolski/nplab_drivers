@@ -18,8 +18,9 @@ def parse_outp_bool(value):
         value = int(value)
     elif type(value) is str:
         value = value.lower()
-
+    print(value)
     if value in {1, 'on', True}:
+        print(value)
         return 1
     elif value in {0, 'off', False}:
         return 0
