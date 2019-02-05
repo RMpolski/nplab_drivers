@@ -18,9 +18,8 @@ def parse_outp_bool(value):
         value = int(value)
     elif type(value) is str:
         value = value.lower()
-    print(value)
+
     if value in {1, 'on', True}:
-        print(value)
         return 1
     elif value in {0, 'off', False}:
         return 0
@@ -34,11 +33,13 @@ def parse_inp_bool(value):
         value = int(value)
     elif type(value) is str:
         value = value.lower()
-    elif value in {1, 'on', True}:
+
+    if value in {1, 'on', True}:
         return 'ON'
     elif value in {0, 'off', False}:
         return 'OFF'
     else:
+        print(value)
         raise ValueError('Must be boolean, on or off, 0 or 1, True or False')
 
 
