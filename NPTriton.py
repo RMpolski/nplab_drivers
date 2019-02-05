@@ -459,7 +459,7 @@ class Triton(IPInstrument):
             chan = 'P%d' % i
             self.chan_pressure.append(chan)
             self.add_parameter(name=chan,
-                               unit='bar',
+                               unit='mbar',
                                get_cmd='READ:DEV:%s:PRES:SIG:PRES' % chan,
                                get_parser=self._parse_pres)
         self.chan_pressure = set(self.chan_pressure)
@@ -544,7 +544,7 @@ class Triton(IPInstrument):
     def _parse_pres(self, msg):
         if 'NOT_FOUND' in msg:
             return None
-        return float(msg.split('SIG:PRES:')[-1].strip('mB')) * 1e3
+        return float(msg.split('SIG:PRES:')[-1].strip('mB'))
 
     def _parse_state(self, msg):
         if 'NOT_FOUND' in msg:
