@@ -158,7 +158,7 @@ class Triton(IPInstrument):
                            set_cmd='SET:SYS:VRM:POC:{}',
                            set_parser=parse_inp_bool,
                            get_cmd='READ:SYS:VRM:POC',
-                           get_parser=parse_outp_bool,
+                           get_parser=self._parse_state,
                            vals=Enum(*boolcheck))
 
         self.add_parameter(name='B',
@@ -233,6 +233,20 @@ class Triton(IPInstrument):
         print('Turbo: {},  speed: {} Hz'.format(self.turbo(), self.turbo_speed()))
         print('KNF: {}'.format(self.knf()))
         print('Forepump: {}'.format(self.forepump()))
+
+    def tempdisable_excMC_magnet(self):
+        for i in self.chan_alias:
+            if i not in ('MC', 'magnet'):
+                getattr(self, i + '_temp_enable')('off')
+
+    def tempdisable_excMC(self):
+        for i in self.chan_alias:
+            if i != 'MC':
+                getattr(self, i + '_temp_enable')('off')
+
+    def alltempsenable(self):
+        for i in self.chan_alias:
+            getattr(self, i + '_temp_enable')('on')
 
     def _get_control_B_param(self, param):
         cmd = 'READ:SYS:VRM:{}'.format(param)
@@ -310,9 +324,9 @@ class Triton(IPInstrument):
 
     def _set_control_magnet_sweeprate_param(self, s):
         if 0 < s <= 0.205:
-            x = round(self.Bx(), 4)
-            y = round(self.By(), 4)
-            z = round(self.Bz(), 4)
+            x = 0
+            y = 0
+            z = round(self.field(), 4)
             self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
                        ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
         else:
