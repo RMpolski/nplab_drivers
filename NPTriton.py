@@ -455,13 +455,20 @@ class Triton(IPInstrument):
 
     def _get_pressure_channels(self):
         self.chan_pressure = []
-        for i in range(1, 7):
+        for i in range(1, 6):
             chan = 'P%d' % i
             self.chan_pressure.append(chan)
             self.add_parameter(name=chan,
                                unit='mbar',
                                get_cmd='READ:DEV:%s:PRES:SIG:PRES' % chan,
                                get_parser=self._parse_pres)
+
+        chan = 'P6'
+        self.chan_pressure.append('POVC')
+        self.add_parameter(name='POVC',
+                           unit='mbar',
+                           get_cmd='READ:DEV:%s:PRES:SIG:PRES' % chan,
+                           get_parser=self._parse_pres)
         self.chan_pressure = set(self.chan_pressure)
 
     def _get_valve_channels(self):
