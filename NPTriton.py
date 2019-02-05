@@ -553,9 +553,9 @@ class Triton(IPInstrument):
     def _parse_swh(self, msg):
         if 'NOT_FOUND' in msg:
             return None
-        elif msg.split(' ').strip(']') == 'ON':
+        elif msg.split(' ')[-1].strip(']') == 'ON':
             return 1
-        elif msg.split(' ').strip(']') == 'OFF':
+        elif msg.split(' ')[-1].strip(']') == 'OFF':
             return 0
         else:
             print('unknown switch heater state')
