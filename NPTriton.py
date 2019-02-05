@@ -403,7 +403,6 @@ class Triton(IPInstrument):
 
     def _set_swh(self, val):
         val = parse_inp_bool(val)
-        print(val)
         if val == 'ON':
             self.write('SET:SYS:VRM:ACTN:NPERS')
             print('Wait 5 min for the switch to warm')
@@ -411,7 +410,7 @@ class Triton(IPInstrument):
             while self.magnet_status() != 'IDLE':
                 pass
         elif val == 'OFF':
-            self.write('SET:SYS:VRM:ACT:PERS')
+            self.write('SET:SYS:VRM:ACTN:PERS')
             print('Wait 5 min for the switch to cool')
             sleep(10)
             while self.magnet_status() != 'IDLE':
