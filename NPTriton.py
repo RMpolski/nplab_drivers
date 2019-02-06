@@ -58,7 +58,7 @@ class Triton(IPInstrument):
         fetch registry directly from fridge-computer
     """
 
-    def __init__(self, name, address=None, port=None, timeout=20, **kwargs):
+    def __init__(self, name, address, port, timeout=20, **kwargs):
         super().__init__(name, address=address, port=port,
                          terminator='\r\n', timeout=timeout, **kwargs)
 
@@ -363,7 +363,7 @@ class Triton(IPInstrument):
         if self._first_magnet_use is False:
             usecheck = input('Are you sure you want to use the magnet? [y/n]: ')
         if usecheck.lower() == 'y':
-            self._first_magnet_use is True
+            self._first_magnet_use = True
             pass
         else:
             print('Magnet will not be used')
@@ -393,7 +393,7 @@ class Triton(IPInstrument):
         if self._first_magnet_use is False:
             usecheck = input('Are you sure you want to use the magnet? [y/n]: ')
         if usecheck.lower() == 'y':
-            self._first_magnet_use is True
+            self._first_magnet_use = True
             pass
         else:
             print('Magnet will not be used')
