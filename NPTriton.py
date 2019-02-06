@@ -362,12 +362,12 @@ class Triton(IPInstrument):
     def _set_field_stable(self, z):
         if self._first_magnet_use is False:
             usecheck = input('Are you sure you want to use the magnet? [y/n]: ')
-        if usecheck.lower() == 'y':
-            self._first_magnet_use = True
-            pass
-        else:
-            print('Magnet will not be used')
-            return
+            if usecheck.lower() == 'y':
+                self._first_magnet_use = True
+                pass
+            else:
+                print('Magnet will not be used')
+                return
 
         magtemp = self.magnet_temp()
         while magtemp >= 4.25:
@@ -392,12 +392,12 @@ class Triton(IPInstrument):
     def _set_field_return(self, z):
         if self._first_magnet_use is False:
             usecheck = input('Are you sure you want to use the magnet? [y/n]: ')
-        if usecheck.lower() == 'y':
-            self._first_magnet_use = True
-            pass
-        else:
-            print('Magnet will not be used')
-            return
+            if usecheck.lower() == 'y':
+                self._first_magnet_use = True
+                pass
+            else:
+                print('Magnet will not be used')
+                return
 
         magtemp = self.magnet_temp()
         while magtemp >= 4.25:
