@@ -1,6 +1,9 @@
 # Commonly used simple loops and calculated parameter structure
+# also breakif-function-generating function
 import qcodes as qc
 from math import ceil
+import numpy as np
+import time
 from qcodes.instrument_drivers.nplab_drivers.time_params import time_from_start
 
 
@@ -303,6 +306,49 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
         _plot_save()
         print('Keyboard Interrupt')
         return data, plot
+
+
+def breakat(parameter, setpoint, epsilon, waitafter=None, boolcond=None):
+    """ Returns a function based on the measured parameter, a setpoint, and an
+    epsilon value within which it must be. There is also an optional waitafter
+    option where you can wait for a certain time after it reaches the break
+
+    parameter: The qcodes instrument parameter to measure and compare to
+        setpoint
+    setpoint: the desired break point
+    epsilon: An uncertainty bound about the setpoint (breaks when abs(parameter
+        - setpoint) < epsilon)
+    waitafter: time (s) to wait after hitting the breakpoint
+    boolcond: can be None (automatic), 'lessthan', 'greaterthan' (for lessthan
+        and greaterthan, the epsilon value doesn't matter, but I'm keeping that
+        parameter in this function since that will usually be used). This
+        specifies the boolean condition used for the break condition"""
+
+    def breakfunc():
+        if boolcond:
+            if boolcond.lower() == 'lessthan':
+                breakbool = parameter() < setpoint
+            elif boolcond.lower() == 'greaterthan':
+                breakbool = parameter() > setpoint
+            else:
+                return TypeError('boolcond must be None, lessthan, or' +
+                                 ' greaterthan')
+        else:
+            breakbool = np.abs(parameter() - setpoint) < epsilon
+        if breakbool or 'breakstart' in breakfunc.__dict__:
+            if not waitafter:
+                return True
+            elif 'breakstart' not in breakfunc.__dict__:
+                breakfunc.breakstart = time.time()
+                return False
+            elif time.time() - breakfunc.breakstart < waitafter:
+                return False
+            else:
+                return True
+        else:
+            return False
+
+    return breakfunc
 
 
 # Calculated parameter outline. If the value provided by instr.param() needs
