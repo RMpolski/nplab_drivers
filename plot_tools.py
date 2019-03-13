@@ -283,7 +283,7 @@ def graphene_mobilityFE(n, rhoxx):
 
     Returns: mobility (cm^2/(Vs))"""
     sigmaxx = 1/rhoxx
-    params = np.polyfit(n, sigmaxx/(n*1.602e-19), 1)
+    params = np.polyfit(n*1.602e-19, sigmaxx/(1.602e-19), 1)
     return params[0]
 
 
