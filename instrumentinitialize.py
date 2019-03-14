@@ -1,11 +1,11 @@
 # functions used to initalize the instruments on each computer
-import qcodes as qc
+import sys
+import time
 
 from qcodes.instrument_drivers.tektronix.Keithley_2000 import Keithley_2000
 from qcodes.instrument_drivers.nplab_drivers.Keithley_6221 import Keithley_6221
 from qcodes.instrument_drivers.nplab_drivers.Keithley_2182a import Keithley_2182a
 from qcodes.instrument_drivers.nplab_drivers.Keithley_2200 import Keithley_2200
-from qcodes.instrument_drivers.nplab_drivers.QD import QD
 from qcodes.instrument_drivers.nplab_drivers.LR_700 import LR_700
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
@@ -13,8 +13,10 @@ from qcodes.instrument_drivers.stanford_research.SR830 import SR830
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
-
 import builtins
+
+if sys.platform == 'win32':
+    from qcodes.instrument_drivers.nplab_drivers.QD import QD
 
 
 standardppms = ('k6', 'lockin1')  # ppms always initializes
@@ -35,6 +37,8 @@ def ppms_init(*instruments):
         seekat: OpenDacs Seekat
         DAC_ADC: OpenDacs DAC_ADC
         vdp: Daniel's van der pauw switch box"""
+    if sys.platform != 'win32':
+        raise SystemError('Must be on Windows platform to use PPMS')
 
     ppms_instrs('ppms')
     for ind, inst in enumerate(instruments):

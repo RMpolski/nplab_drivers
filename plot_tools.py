@@ -2,6 +2,7 @@ import qcodes as qc
 import pandas as pd
 import numpy as np
 from scipy.integrate import cumtrapz
+from scipy.optimize import curve_fit
 
 
 def mov_average(array, window):
@@ -274,7 +275,7 @@ def concat_2d(dsets, xparam, yparam, zparam):
 #     aunity = getattr(dsets[0], yp).unit
 #     aunitz = getattr(dsets[0], zp).unit
 
-def graphene_mobilityFE(n, rhoxx):
+def graphene_mobilityFE(n, sigmaxx):
     """Find the mobility of graphene using the regular low-limit field-effect
     linear fit to the slope near the CNP. Input here a small region where you
     want to apply the linear fit about the CNP.
@@ -282,8 +283,8 @@ def graphene_mobilityFE(n, rhoxx):
     rhoxx in ohms/sq
 
     Returns: mobility (cm^2/(Vs))"""
-    sigmaxx = 1/rhoxx
-    params = np.polyfit(n*1.602e-19, sigmaxx/(1.602e-19), 1)
+
+    params = np.polyfit(n*1.602e-19, sigmaxx, 1)
     return params[0]
 
 
@@ -291,20 +292,21 @@ def gr_Boltzmannfit(dens, mu, rhos):
     """ dens is electron density in units of cm^-2.
     mu is in cm^2/(Vs). rhos is the base resistivity at high
     density. returns sigma_xx"""
+
     return ((dens*1.602e-19*mu)**-1 + rhos)**-1
 
 
-def graphene_mobilityB(n, rhoxx):
+def graphene_mobilityB(n, sigmaxx):
     """Find the mobility of graphene using a Boltzmann fit as used in Cory
     Dean's first hBN paper.
     Use density n in cm^-2, rhoxx in ohms/sq.
 
     Returns: param -- a list of parameters, first is mobility (unit cm^2/(Vs))
     and second is rho_s, which is the residual resistivity at high density"""
-    sigmaxx = 1/rhoxx
+
     if n[5] > 0:
         mu0 = 100000
     elif n[5] < 0:
         mu0 = -100000
-    params, pcov = np.curve_fit(gr_Boltzmannfit, n, sigmaxx, p0=[mu0, 50])
+    params, pcov = curve_fit(gr_Boltzmannfit, n, sigmaxx, p0=[mu0, 50])
     return params
