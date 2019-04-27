@@ -118,7 +118,7 @@ class SIM900(VisaInstrument):
         s = 'SNDT {},'.format(int(port)) + '"{}"'.format(message)
         self.write(s)
         time.sleep(0.05)
-        ans = self.ask('GETN {},128')
+        ans = self.ask('GETN {},128'.format(int(port)))
         time.sleep(0.05)
         return ans
 
