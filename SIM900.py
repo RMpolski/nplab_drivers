@@ -16,7 +16,7 @@ import time
 from functools import partial
 
 
-def parse_outp_bool(value):
+def parse_bool(value):
     if type(value) is float:
         value = int(value)
     elif type(value) is str:
@@ -31,22 +31,23 @@ def parse_outp_bool(value):
         raise ValueError('Must be boolean, on or off, 0 or 1, True or False')
 
 
-def parse_inp_bool(value):
-    if type(value) is float:
-        value = int(value)
-    elif type(value) is str:
-        value = value.lower()
-
-    if value in {1, 'on', True}:
-        return 'ON'
-    elif value in {0, 'off', False}:
-        return 'OFF'
-    else:
-        print(value)
-        raise ValueError('Must be boolean, on or off, 0 or 1, True or False')
+# def parse_inp_bool(value):
+#     if type(value) is float:
+#         value = int(value)
+#     elif type(value) is str:
+#         value = value.lower()
+#
+#     if value in {1, 'on', True}:
+#         return 'ON'
+#     elif value in {0, 'off', False}:
+#         return 'OFF'
+#     else:
+#         print(value)
+#         raise ValueError('Must be boolean, on or off, 0 or 1, True or False')
 
 
 boolcheck = (0, 1, 'on', 'off', 'ON', 'OFF', False, True)
+
 
 class SIM900(VisaInstrument):
     """
@@ -66,30 +67,54 @@ class SIM900(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter('volt_p1', label='Port 1 Voltage', unit='V',
-                           set_cmd=partial(self.write_to_port, 1, 'VOLT'),
-                           get_cmd=partial(self.getvolt, 1),
+                           set_cmd=partial(self.setvolt, 1, 'VOLT'),
+                           get_cmd=partial(self.get_from_port, 1, 'VOLT?'),
                            get_parser=float,
                            vals=vals.Number(-20, 20))
 
         self.add_parameter('volt_p5', label='Port 5 Voltage', unit='V',
-                           set_cmd=partial(self.setvolt, 5),
-                           get_cmd=partial(self.getvolt, 5),
+                           set_cmd=partial(self.setvolt, 5, 'VOLT'),
+                           get_cmd=partial(self.get_from_port, 5, 'VOLT?'),
                            get_parser=float,
                            vals=vals.Number(-20, 20))
 
-        self.add_parameter('output_p1', set_cmd=)
+        self.add_parameter('output_p1',
+                           set_cmd=partial(self.write_to_port, 1, 'EXON'),
+                           get_cmd=partial(self.get_from_port, 1, 'EXON'),
+                           set_parser=parse_bool,
+                           get_parser=parse_bool,
+                           vals=vals.Enum(*boolcheck))
 
+        self.add_parameter('output_p5',
+                           set_cmd=partial(self.write_to_port, 5, 'EXON'),
+                           get_cmd=partial(self.get_from_port, 5, 'EXON'),
+                           set_parser=parse_bool,
+                           get_parser=parse_bool,
+                           vals=vals.Enum(*boolcheck))
 
+        self.write_to_port(1, 'TERM', 2)
+        self.write_to_port(1, 'TERM', 2)
+        if reset:
+            self.reset()
+
+        self.connect_message()
+
+    def reset(self):
+        self.write_to_port(1, '*RST', '')
+        self.write_to_port(5, '*RST', '')
+        self.write('*RST')
 
     def write_to_port(self, port, message, val):
         sendmess = message + ' {}'.format(val)
-        s = 'SNDT {},'.format(port)'+'"{}"'.format(sendmess)
+        s = 'SNDT {},'.format(int(port) + '"{}"'.format(sendmess))
         self.write(s)
         time.sleep(0.05)
 
-
     def get_from_port(self, port, message):
-        s = 'SNDT {},'.format(port)'+'"{}"'.format(message)
+        s = 'SNDT {},'.format(int(port)) + '"{}"'.format(message)
         ans = self.ask(s)
         time.sleep(0.05)
         return ans
+
+    def setvolt(self, port, message, val):
+        self.write_to_port(port, message, np.round(val, 3))
