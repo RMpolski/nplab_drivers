@@ -14,6 +14,8 @@ from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
+from qcodes.instrument_drivers.nplab_drivers.SIM900 import SIM900
+
 import builtins
 
 if sys.platform == 'win32':
@@ -130,7 +132,7 @@ def triton_instrs(instr_str):
     if instr_str == 'triton':
         triton = Triton('triton', 'triton.local', 33576)
         builtins.triton = triton
-    if instr_str == 'k6':
+    elif instr_str == 'k6':
         k6 = Keithley_6221('k6', 'GPIB::12::INSTR')
         builtins.k6 = k6
     elif instr_str == 'k2182':
@@ -160,3 +162,8 @@ def triton_instrs(instr_str):
     elif instr_str == 'sr560':
         sr560 = SR560('sr560', 'COM5')
         builtins.sr560 = sr560
+    elif instr_str == 'srframe':
+        srframe = SIM900('srframe', 'GPIB0::2::INSTR')
+        builtins.srframe = srframe
+    else:
+        print('{} is not listed in the instruments.'.format(instr_str))
