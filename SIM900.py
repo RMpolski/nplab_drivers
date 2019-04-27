@@ -97,7 +97,8 @@ class SIM900(VisaInstrument):
         if reset:
             self.reset()
 
-        # self.connect_message('*IDN')
+        time.sleep(0.25)
+        self.connect_message()
 
     # def connect_message(self, **kwargs):
     #     super().connect_message(idn_param='*IDN', begin_time=None)
