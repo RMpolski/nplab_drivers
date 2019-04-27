@@ -109,7 +109,7 @@ class SIM900(VisaInstrument):
 
     def write_to_port(self, port, message, val):
         sendmess = message + ' {}'.format(val)
-        s = 'SNDT {},'.format(int(port) + '"{}"'.format(sendmess))
+        s = 'SNDT {},'.format(int(port)) + '"{}"'.format(sendmess)
         self.write(s)
         time.sleep(0.05)
 
