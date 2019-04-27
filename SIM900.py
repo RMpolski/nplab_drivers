@@ -92,15 +92,15 @@ class SIM900(VisaInstrument):
                            get_parser=parse_bool,
                            vals=vals.Enum(*boolcheck))
 
-        # self.write_to_port(1, 'TERM', 2)
-        # self.write_to_port(1, 'TERM', 2)
+        self.write_to_port(1, 'TERM', 2)
+        self.write_to_port(1, 'TERM', 2)
         if reset:
             self.reset()
 
         self.connect_message()
 
     def connect_message(self, **kwargs):
-        super().connect_message(idn_Param='*IDN', **kwargs)
+        super().connect_message(idn_param='*IDN', **kwargs)
 
     def reset(self):
         self.write_to_port(1, '*RST', '')
