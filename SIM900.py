@@ -80,7 +80,7 @@ class SIM900(VisaInstrument):
 
         self.add_parameter('output_p1',
                            set_cmd=partial(self.write_to_port, 1, 'EXON'),
-                           get_cmd=partial(self.get_from_port, 1, 'EXON'),
+                           # get_cmd=partial(self.get_from_port, 1, 'EXON'),
                            set_parser=parse_bool,
                            # get_parser=parse_bool,
                            vals=vals.Enum(*boolcheck))
