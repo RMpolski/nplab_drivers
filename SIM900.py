@@ -100,7 +100,7 @@ class SIM900(VisaInstrument):
         self.connect_message()
 
     def connect_message(self, **kwargs):
-        super().connect_message('*IDN', **kwargs)
+        self.connect_message('*IDN', **kwargs)
 
     def reset(self):
         self.write_to_port(1, '*RST', '')
