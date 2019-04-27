@@ -8,12 +8,13 @@ from qcodes.instrument_drivers.nplab_drivers.LR_700 import LR_700
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
 from qcodes.instrument_drivers.stanford_research.SR830 import SR830
+from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
 from qcodes.instrument_drivers.nplab_drivers.plot_tools import (get2d_dat,
                                                     dvdi2dfromiv, concat_2d,
-                                                    val_to_index,
+                                                    val_to_index, mov_average,
                                                     iv_from_dvdi,
                                                     graphene_mobilityFE,
                                                     graphene_mobilityB,

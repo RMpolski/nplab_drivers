@@ -129,11 +129,11 @@ class Seekat(Instrument):
 
     def _open_serial_connection(self, timeout=None):
             ser = serial.Serial(self.address, 9600, timeout=timeout)
-            print(ser.isOpen())
+            print('Serial connection is open?: {}'.format(ser.isOpen()))
             if not (ser.isOpen()):
                 ser.open()
             self._ser = ser
-            print('Connected to ', self.address)
+            print('Connected to: ', self.address)
             # print(self.get_idn())  # for some reason get_idn() doesn't work
             # as the first command, but it works after using other commands.
             # It doesn't work even after waiting like 2 seconds

@@ -10,6 +10,7 @@ from qcodes.instrument_drivers.nplab_drivers.LR_700 import LR_700
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
 from qcodes.instrument_drivers.stanford_research.SR830 import SR830
+from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
@@ -46,7 +47,7 @@ def ppms_init(*instruments):
             for sinstr in standardppms:
                 ppms_instrs(sinstr.lower())
             # Put the standard PPMS initialization protocol here
-            time.wait(1)
+            time.sleep(1)
             k6.compliance(0.2)
             k6.AC_phasemark(1)
             k6.AC_phasemark_offset(0)
@@ -55,7 +56,7 @@ def ppms_init(*instruments):
             ppms_instrs(inst.lower())
 
 
-standardtriton = ('k6', 'lockin')  # triton always initializes
+standardtriton = ('k6', 'lockin865')  # triton always initializes
 
 
 def triton_init(*instruments):
@@ -79,7 +80,7 @@ def triton_init(*instruments):
             for sinstr in standardtriton:
                 triton_instrs(sinstr.lower())
             # Put the initialization for standard instruments here
-            time.wait(1)
+            time.sleep(1)
             k6.compliance(0.2)
             k6.AC_phasemark(1)
             k6.AC_phasemark_offset(0)
@@ -142,14 +143,17 @@ def triton_instrs(instr_str):
         k2200 = Keithley_2200('k2200', 'GPIB::19::INSTR')
         builtins.k2200 = k2200
     elif instr_str == 'seekat':
-        seekat = Seekat('seekat', 'COM6', timeout=8)
+        seekat = Seekat('seekat', 'COM7', timeout=8)  # the silver/white box (The black box is 'COM6')
         builtins.seekat = seekat
     elif instr_str == 'dacadc':
         dacadc = DAC_ADC('dacadc', 'COM9', timeout=8)
         builtins.dacadc = dacadc
-    elif instr_str == 'lockin':
-        lockin = SR830('lockin', 'GPIB0::8::INSTR')
-        builtins.lockin = lockin
+    elif instr_str == 'lockin830':
+        lockin830 = SR830('lockin830', 'GPIB0::8::INSTR')
+        builtins.lockin830 = lockin830
+    elif instr_str == 'lockin865':
+        lockin865 = SR865A('lockin865', 'GPIB0::4::INSTR')
+        builtins.lockin865 = lockin865
     elif instr_str == 'vdp':
         vdp = vdpArduino('vdp', 'COM10', timeout=6)
         builtins.vdp = vdp
