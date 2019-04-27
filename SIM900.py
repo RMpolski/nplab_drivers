@@ -70,13 +70,13 @@ class SIM900(VisaInstrument):
                            set_cmd=partial(self.setvolt, 1, 'VOLT'),
                            get_cmd=partial(self.get_from_port, 1, 'VOLT?'),
                            get_parser=float,
-                           vals=vals.Number(-20, 20))
+                           vals=vals.Numbers(-20, 20))
 
         self.add_parameter('volt_p5', label='Port 5 Voltage', unit='V',
                            set_cmd=partial(self.setvolt, 5, 'VOLT'),
                            get_cmd=partial(self.get_from_port, 5, 'VOLT?'),
                            get_parser=float,
-                           vals=vals.Number(-20, 20))
+                           vals=vals.Numbers(-20, 20))
 
         self.add_parameter('output_p1',
                            set_cmd=partial(self.write_to_port, 1, 'EXON'),
