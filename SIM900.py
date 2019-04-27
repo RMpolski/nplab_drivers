@@ -92,8 +92,8 @@ class SIM900(VisaInstrument):
                            get_parser=parse_bool,
                            vals=vals.Enum(*boolcheck))
 
-        self.write_to_port(1, 'TERM', 2)
-        self.write_to_port(1, 'TERM', 2)
+        # self.write_to_port(1, 'TERM', 2)
+        # self.write_to_port(1, 'TERM', 2)
         if reset:
             self.reset()
 
