@@ -234,6 +234,16 @@ class Triton(IPInstrument):
         print('KNF: {}'.format(self.knf()))
         print('Forepump: {}'.format(self.forepump()))
 
+    def read_temps(self):
+        for i in self.chan_alias:
+            print('{}:  {} K'.format(i, getattr(self, self.chan_alias[i])()))
+
+    def read_pressures(self):
+        for i in range(1,6):
+            print('P{}:  {}'.format(i, getattr(self, 'P'+str(i))()))
+
+        print('POVC:  {}'.format(getattr(self, POVC)()))
+
     def tempdisable_excMC_magnet(self):
         for i in self.chan_alias:
             if i not in ('MC', 'magnet'):
@@ -370,9 +380,10 @@ class Triton(IPInstrument):
                 return
 
         magtemp = self.magnet_temp()
-        while magtemp >= 4.25:
+        condit_temp = 4.25 + self.field()/8*(0.45)
+        while magtemp >= condit_temp:
             print('The magnet temperature is {} K. '.format(magtemp) +
-                  'Waiting for it to drop < 4.25 K')
+                  'Waiting for it to drop < {} K'.format(condit_temp))
             sleep(15)
             magtemp = self.magnet_temp()
 
@@ -400,9 +411,10 @@ class Triton(IPInstrument):
                 return
 
         magtemp = self.magnet_temp()
-        while magtemp >= 4.25:
+        condit_temp = 4.25 + self.field()/8*(0.45)
+        while magtemp >= condit_temp:
             print('The magnet temperature is {} K. '.format(magtemp) +
-                  'Waiting for it to drop < 4.25 K')
+                  'Waiting for it to drop < {} K'.format(condit_temp))
             sleep(15)
             magtemp = self.magnet_temp()
 
@@ -527,7 +539,7 @@ class Triton(IPInstrument):
         elif action == 'COND':
             action = 'Condensing'
         elif action == 'NONE':
-            if self.MC.get() < 2:
+            if self.MC_temp.get() < 2:
                 action = 'Circulating'
             else:
                 action = 'Idle'
