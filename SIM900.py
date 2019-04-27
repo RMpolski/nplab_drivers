@@ -68,13 +68,13 @@ class SIM900(VisaInstrument):
 
         self.add_parameter('volt_p1', label='Port 1 Voltage', unit='V',
                            set_cmd=partial(self.setvolt, 1, 'VOLT'),
-                           get_cmd=partial(self.get_from_port, 1, 'VOLT?'),
-                           get_parser=float,
+                           # get_cmd=partial(self.get_from_port, 1, 'VOLT?'),
+                           # get_parser=float,
                            vals=vals.Numbers(-20, 20))
 
         self.add_parameter('volt_p5', label='Port 5 Voltage', unit='V',
                            set_cmd=partial(self.setvolt, 5, 'VOLT'),
-                           get_cmd=partial(self.get_from_port, 5, 'VOLT?'),
+                           # get_cmd=partial(self.get_from_port, 5, 'VOLT?'),
                            get_parser=float,
                            vals=vals.Numbers(-20, 20))
 
@@ -82,14 +82,14 @@ class SIM900(VisaInstrument):
                            set_cmd=partial(self.write_to_port, 1, 'EXON'),
                            get_cmd=partial(self.get_from_port, 1, 'EXON'),
                            set_parser=parse_bool,
-                           get_parser=parse_bool,
+                           # get_parser=parse_bool,
                            vals=vals.Enum(*boolcheck))
 
         self.add_parameter('output_p5',
                            set_cmd=partial(self.write_to_port, 5, 'EXON'),
-                           get_cmd=partial(self.get_from_port, 5, 'EXON'),
+                           # get_cmd=partial(self.get_from_port, 5, 'EXON'),
                            set_parser=parse_bool,
-                           get_parser=parse_bool,
+                           # get_parser=parse_bool,
                            vals=vals.Enum(*boolcheck))
 
         self.write_to_port(1, 'TERM', 2)
@@ -114,13 +114,14 @@ class SIM900(VisaInstrument):
         self.write(s)
         time.sleep(0.05)
 
-    def get_from_port(self, port, message):
-        s = 'SNDT {},'.format(int(port)) + '"{}"'.format(message)
-        self.write(s)
-        time.sleep(0.05)
-        ans = self.ask('GETN {},128'.format(int(port)))
-        time.sleep(0.05)
-        return ans
+    ###TODO: need to fix this
+    # def get_from_port(self, port, message):
+    #     s = 'SNDT {},'.format(int(port)) + '"{}"'.format(message)
+    #     self.write(s)
+    #     time.sleep(0.05)
+    #     ans = self.ask('GETN {},128'.format(int(port)))
+    #     time.sleep(0.05)
+    #     return ans
 
     def setvolt(self, port, message, val):
         self.write_to_port(port, message, np.round(val, 3))
