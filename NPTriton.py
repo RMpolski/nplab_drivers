@@ -242,7 +242,7 @@ class Triton(IPInstrument):
         for i in range(1,6):
             print('P{}:  {}'.format(i, getattr(self, 'P'+str(i))()))
 
-        print('POVC:  {}'.format(getattr(self, POVC)()))
+        print('POVC:  {}'.format(getattr(self, 'POVC')()))
 
     def tempdisable_excMC_magnet(self):
         for i in self.chan_alias:
