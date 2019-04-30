@@ -68,45 +68,76 @@ class SIM900(VisaInstrument):
 
         self.add_parameter('volt_p1', label='Port 1 Voltage', unit='V',
                            set_cmd=partial(self.setvolt, 1, 'VOLT'),
-                           # get_cmd=partial(self.get_from_port, 1, 'VOLT?'),
-                           # get_parser=float,
+                           get_cmd=partial(self.get_from_port, 1, 'VOLT?'),
+                           get_parser=float,
                            vals=vals.Numbers(-20, 20))
 
         self.add_parameter('volt_p5', label='Port 5 Voltage', unit='V',
                            set_cmd=partial(self.setvolt, 5, 'VOLT'),
-                           # get_cmd=partial(self.get_from_port, 5, 'VOLT?'),
+                           get_cmd=partial(self.get_from_port, 5, 'VOLT?'),
                            get_parser=float,
                            vals=vals.Numbers(-20, 20))
 
         self.add_parameter('output_p1',
                            set_cmd=partial(self.write_to_port, 1, 'EXON'),
-                           # get_cmd=partial(self.get_from_port, 1, 'EXON'),
+                           get_cmd=partial(self.get_from_port, 1, 'EXON?'),
                            set_parser=parse_bool,
-                           # get_parser=parse_bool,
+                           get_parser=int,
                            vals=vals.Enum(*boolcheck))
 
         self.add_parameter('output_p5',
                            set_cmd=partial(self.write_to_port, 5, 'EXON'),
-                           # get_cmd=partial(self.get_from_port, 5, 'EXON'),
+                           get_cmd=partial(self.get_from_port, 5, 'EXON?'),
                            set_parser=parse_bool,
-                           # get_parser=parse_bool,
+                           get_parser=int,
                            vals=vals.Enum(*boolcheck))
+                           
+        self.sum_port = 8
+        
+        for i in range(4):
+            channel = i + 1
+            self.add_parameter('sum_chan'+str(channel),
+                               set_cmd=partial(self.write_to_port, self.sum_port, 'CHAN {},'.format(channel)),
+                               get_cmd=partial(self.get_from_port, self.sum_port, 'CHAN? '+str(channel)),
+                               set_parser=self.parse_sum_chan,
+                               get_parser=int,
+                               vals=vals.Enum(0, 1, -1, 'off', 'OFF', False, 'invert', 'INVERT'))
+        
+        ## this parameter doesn't work too well yet...
+        self.add_parameter('sum_read',
+                           get_cmd=self._sum_volt_read,
+                           get_parser=float)
+                           
 
+        
+        self.write('FLSH 1')
+        time.sleep(0.05)
+        self.write('FLSH 5')
+        time.sleep(0.05)
+        self.write('FLSH 8')
+        time.sleep(0.05)
         self.write_to_port(1, 'TERM', 2)
-        self.write_to_port(1, 'TERM', 2)
+        time.sleep(0.05)
+        self.write_to_port(5, 'TERM', 2)
+        time.sleep(0.05)
+        self.write_to_port(8, 'TERM', 2)
+        time.sleep(0.05)
+        
+        self.sum_read_averageT = 1000
         if reset:
             self.reset()
 
         time.sleep(0.25)
         self.connect_message()
 
-    # def connect_message(self, **kwargs):
-    #     super().connect_message(idn_param='*IDN', begin_time=None)
 
     def reset(self):
         self.write_to_port(1, '*RST', '')
+        time.sleep(0.05)
         self.write_to_port(5, '*RST', '')
+        time.sleep(0.05)
         self.write('*RST')
+        time.sleep(0.05)
 
     def write_to_port(self, port, message, val):
         sendmess = message + ' {}'.format(val)
@@ -114,14 +145,45 @@ class SIM900(VisaInstrument):
         self.write(s)
         time.sleep(0.05)
 
-    ###TODO: need to fix this
-    # def get_from_port(self, port, message):
-    #     s = 'SNDT {},'.format(int(port)) + '"{}"'.format(message)
-    #     self.write(s)
-    #     time.sleep(0.05)
-    #     ans = self.ask('GETN {},128'.format(int(port)))
-    #     time.sleep(0.05)
-    #     return ans
+    def get_from_port(self, port, message):
+        self.write('FLOQ')
+        time.sleep(0.05)
+        s = 'SNDT {},'.format(int(port)) + '"{}"'.format(message)
+        self.write(s)
+        time.sleep(0.1)
+        ans = self.ask('GETN? {},20'.format(int(port)))[5:]
+        time.sleep(0.05)
+        return ans
 
     def setvolt(self, port, message, val):
         self.write_to_port(port, message, np.round(val, 3))
+        
+    def parse_sum_chan(self, value):
+        if type(value) is str:
+            value = str.lower()
+        elif type(value) is float:
+            value = int(value)
+        
+        if value in (0, 'off', False):
+            return 0
+        elif value in (-1, 'invert'):
+            return -1
+        elif value == 1:
+            return 1
+        else:
+            raise ValueError('Value must be in (-1, 1, 0, "invert", "off", False)')
+            
+    def _sum_volt_read(self):
+        if self.sum_read_averageT < 10:
+            self.sum_read_averageT = 10
+        elif self.sum_read_averageT > 10000:
+            self.sum_read_averageT = 10000
+        
+        self.write('FLOQ')
+        time.sleep(0.05)
+        self.write('SNDT {}, "READ? {}"'.format(int(self.sum_port), int(self.sum_read_averageT)))
+        time.sleep(self.sum_read_averageT/1000 + 0.1)
+        ans = self.ask('GETN? {},20'.format(int(self.sum_port)))[5:]
+        time.sleep(0.05)
+        return ans
+            
