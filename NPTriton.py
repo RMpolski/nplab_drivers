@@ -11,6 +11,7 @@ from qcodes import IPInstrument
 from qcodes.utils.validators import Enum, Ints
 
 from time import sleep
+import numpy as np
 
 
 def parse_outp_bool(value):
@@ -380,7 +381,10 @@ class Triton(IPInstrument):
                 return
 
         magtemp = self.magnet_temp()
-        condit_temp = 4.25 + self.field()/8*(0.45)
+        if self.magnet_swh():
+            condit_temp = 4.3895 + np.abs(self.field())/8*(0.32)
+        else:
+            condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
         while magtemp >= condit_temp:
             print('The magnet temperature is {} K. '.format(magtemp) +
                   'Waiting for it to drop < {} K'.format(condit_temp))
@@ -411,7 +415,11 @@ class Triton(IPInstrument):
                 return
 
         magtemp = self.magnet_temp()
-        condit_temp = 4.25 + self.field()/8*(0.45)
+        if self.magnet_swh():
+            condit_temp = 4.3895 + np.abs(self.field())/8*(0.32)
+        else:
+            condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
+            
         while magtemp >= condit_temp:
             print('The magnet temperature is {} K. '.format(magtemp) +
                   'Waiting for it to drop < {} K'.format(condit_temp))
