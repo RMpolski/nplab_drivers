@@ -237,7 +237,14 @@ class Triton(IPInstrument):
 
     def read_temps(self):
         for i in self.chan_alias:
-            print('{}:  {} K'.format(i, getattr(self, self.chan_alias[i])()))
+            stat = 'off'
+            if getattr(self, i+'_enable')() == 0:
+                stat = 'off'
+            elif getattr(self, i+'_enable')() == 1:
+                stat = 'on'
+            else:
+                print('Temp reading status not determined')
+            print('{} - {}:  {} K'.format(i, getattr(self, stat, self.chan_alias[i])()))
 
     def read_pressures(self):
         for i in range(1,6):
@@ -382,12 +389,12 @@ class Triton(IPInstrument):
 
         magtemp = self.magnet_temp()
         if self.magnet_swh():
-            condit_temp = 4.3895 + np.abs(self.field())/8*(0.32)
+            condit_temp = 4.41 + np.abs(self.field())/8*0.3
         else:
             condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
         while magtemp >= condit_temp:
-            print('The magnet temperature is {} K. '.format(magtemp) +
-                  'Waiting for it to drop < {} K'.format(condit_temp))
+            print('The magnet temperature is {:.4f} K. '.format(magtemp) +
+                  'Waiting for it to drop < {:.4f} K'.format(condit_temp))
             sleep(15)
             magtemp = self.magnet_temp()
 
@@ -416,13 +423,13 @@ class Triton(IPInstrument):
 
         magtemp = self.magnet_temp()
         if self.magnet_swh():
-            condit_temp = 4.3895 + np.abs(self.field())/8*(0.32)
+            condit_temp = 4.41 + np.abs(self.field())/8*0.3
         else:
             condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
-            
+
         while magtemp >= condit_temp:
-            print('The magnet temperature is {} K. '.format(magtemp) +
-                  'Waiting for it to drop < {} K'.format(condit_temp))
+            print('The magnet temperature is {:.4f} K. '.format(magtemp) +
+                  'Waiting for it to drop < {:.4f} K'.format(condit_temp))
             sleep(15)
             magtemp = self.magnet_temp()
 
