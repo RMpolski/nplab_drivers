@@ -238,7 +238,7 @@ class Triton(IPInstrument):
     def read_temps(self):
         for i in self.chan_alias:
             stat = 'off'
-            if getattr(self, i+'_enable')() == 0:
+            if getattr(self, i+'_temp_enable')() == 0:
                 stat = 'off'
             elif getattr(self, i+'_enable')() == 1:
                 stat = 'on'
@@ -389,7 +389,7 @@ class Triton(IPInstrument):
 
         magtemp = self.magnet_temp()
         if self.magnet_swh():
-            condit_temp = 4.4195 + np.abs(self.field())/8*0.3
+            condit_temp = 4.42 + np.abs(self.field())/8*0.3
         else:
             condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
         while magtemp >= condit_temp:
@@ -423,7 +423,7 @@ class Triton(IPInstrument):
 
         magtemp = self.magnet_temp()
         if self.magnet_swh():
-            condit_temp = 4.4195 + np.abs(self.field())/8*0.3
+            condit_temp = 4.42 + np.abs(self.field())/8*0.3
         else:
             condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
 
