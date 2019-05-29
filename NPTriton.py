@@ -240,7 +240,7 @@ class Triton(IPInstrument):
             stat = 'off'
             if getattr(self, i+'_temp_enable')() == 0:
                 stat = 'off'
-            elif getattr(self, i+'_enable')() == 1:
+            elif getattr(self, i+'_temp_enable')() == 1:
                 stat = 'on'
             else:
                 print('Temp reading status not determined')
