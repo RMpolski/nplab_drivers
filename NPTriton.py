@@ -389,7 +389,7 @@ class Triton(IPInstrument):
 
         magtemp = self.magnet_temp()
         if self.magnet_swh():
-            condit_temp = 4.42 + np.abs(self.field())/8*0.3
+            condit_temp = 4.43 + np.abs(self.field())/8*0.28
         else:
             condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
         while magtemp >= condit_temp:
@@ -423,7 +423,7 @@ class Triton(IPInstrument):
 
         magtemp = self.magnet_temp()
         if self.magnet_swh():
-            condit_temp = 4.42 + np.abs(self.field())/8*0.3
+            condit_temp = 4.43 + np.abs(self.field())/8*0.28
         else:
             condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
 
