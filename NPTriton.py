@@ -391,11 +391,30 @@ class Triton(IPInstrument):
                 print('Magnet will not be used')
                 return
 
+        maxtempHon8T = 4.73
+        maxtempHon0T = 4.46
+        maxtempHoff8T = 4.5
+        maxtempHoff0T = 4.18
         magtemp = self.magnet_temp()
         if self.magnet_swh():
-            condit_temp = 4.445 + np.abs(self.field())/8*0.28
+            f = np.abs(self.field())
+            if f < 0.4:
+                condit_temp = maxtempHon0T + np.sqrt(0.02*f)
+            else:
+                p4temp = maxtempHon0T + np.sqrt(0.02*0.4)
+                sl = (maxtempHon8T - p4temp)/(8-0.4)
+                interc = p4temp - sl*0.4
+                condit_temp = sl*f + interc
         else:
-            condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
+            f = np.abs(self.field())
+            if f < 0.4:
+                condit_temp = maxtempHoff0T + np.sqrt(0.02*f)
+            else:
+                p4temp = maxtempHoff0T + np.sqrt(0.02*0.4)
+                sl = (maxtempHoff8T - p4temp)/(8-0.4)
+                interc = p4temp - sl*0.4
+                condit_temp = sl*f + interc
+
         while magtemp >= condit_temp:
             print('The magnet temperature is {:.4f} K. '.format(magtemp) +
                   'Waiting for it to drop < {:.4f} K'.format(condit_temp))
@@ -425,11 +444,36 @@ class Triton(IPInstrument):
                 print('Magnet will not be used')
                 return
 
+        ## First tried to use a linear slope.
+        # magtemp = self.magnet_temp()
+        # if self.magnet_swh():
+        #     condit_temp = 4.45 + np.abs(self.field())/8*0.23
+        # else:
+        #     condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
+
+        maxtempHon8T = 4.73
+        maxtempHon0T = 4.46
+        maxtempHoff8T = 4.5
+        maxtempHoff0T = 4.18
         magtemp = self.magnet_temp()
         if self.magnet_swh():
-            condit_temp = 4.445 + np.abs(self.field())/8*0.28
+            f = np.abs(self.field())
+            if f < 0.4:
+                condit_temp = maxtempHon0T + np.sqrt(0.02*f)
+            else:
+                p4temp = maxtempHon0T + np.sqrt(0.02*0.4)
+                sl = (maxtempHon8T - p4temp)/(8-0.4)
+                interc = p4temp - sl*0.4
+                condit_temp = sl*f + interc
         else:
-            condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
+            f = np.abs(self.field())
+            if f < 0.4:
+                condit_temp = maxtempHoff0T + np.sqrt(0.02*f)
+            else:
+                p4temp = maxtempHoff0T + np.sqrt(0.02*0.4)
+                sl = (maxtempHoff8T - p4temp)/(8-0.4)
+                interc = p4temp - sl*0.4
+                condit_temp = sl*f + interc
 
         while magtemp >= condit_temp:
             print('The magnet temperature is {:.4f} K. '.format(magtemp) +
