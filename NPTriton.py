@@ -266,6 +266,10 @@ class Triton(IPInstrument):
         for i in self.chan_alias:
             getattr(self, i + '_temp_enable')('on')
 
+    def magnet_hold(self):
+        """Stop any sweeps"""
+        self.write('SET:SYS:VRM:ACTN:HOLD')
+
     def _get_control_B_param(self, param):
         cmd = 'READ:SYS:VRM:{}'.format(param)
         return self._get_response_value(self.ask(cmd))
