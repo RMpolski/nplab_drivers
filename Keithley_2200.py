@@ -35,7 +35,7 @@ class Keithley_2200(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter('voltage', set_cmd='VOLT {}',
-                           get_cmd='FETC:VOLT?', unit='V',
+                           get_cmd='FETC:VOLT?', unit='V', get_parser=float,
                            vals=vals.Numbers(0, 72))
         self.add_parameter('current', set_cmd='CURR:LEV {}',
                            get_cmd='FETC:CURR?', unit='A',
