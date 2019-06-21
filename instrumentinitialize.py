@@ -10,12 +10,9 @@ from qcodes.instrument_drivers.nplab_drivers.LR_700 import LR_700
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
 from qcodes.instrument_drivers.stanford_research.SR830 import SR830
-from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
-from qcodes.instrument_drivers.nplab_drivers.SIM900 import SIM900
-
 import builtins
 
 if sys.platform == 'win32':
@@ -29,7 +26,7 @@ def ppms_init(*instruments):
     """Enter the instrument codes to initialize each of the following
         instruments (ppms automatically inits as 'ppms'):
 
-        standard: whatever you specify above in the tuple
+        standard: lockin1 and k6 with correct phasemark settings
         k6: keithley 6221
         lockin1: The top lock-in amplifier
         lockin2: The second from top lock-in amplifier
@@ -58,7 +55,7 @@ def ppms_init(*instruments):
             ppms_instrs(inst.lower())
 
 
-standardtriton = ('k6', 'lockin865')  # triton always initializes
+standardtriton = ('k6', 'lockin')  # triton always initializes
 
 
 def triton_init(*instruments):
@@ -82,7 +79,7 @@ def triton_init(*instruments):
             for sinstr in standardtriton:
                 triton_instrs(sinstr.lower())
             # Put the initialization for standard instruments here
-            time.sleep(1)
+            time.wait(1)
             k6.compliance(0.2)
             k6.AC_phasemark(1)
             k6.AC_phasemark_offset(0)
@@ -118,10 +115,10 @@ def ppms_instrs(instr_str):
         lr700 = LR_700('lr700', 'GPIB::18::INSTR')
         builtins.lr700 = lr700
     elif instr_str == 'lockin1':
-        lockin1 = SR830('lockin1', 'GPIB0::9::INSTR')
+        lockin1 = SR830('lockin1', 'GPIB0::1::INSTR')
         builtins.lockin1 = lockin1
     elif instr_str == 'lockin2':
-        lockin2 = SR830('lockin2', 'GPIB0::8::INSTR')
+        lockin2 = SR830('lockin2', 'GPIB0::2::INSTR')
         builtins.lockin2 = lockin2
     elif instr_str == 'vdp':
         vdp = vdpArduino('vdp', 'COM10', timeout=6)
@@ -132,7 +129,7 @@ def triton_instrs(instr_str):
     if instr_str == 'triton':
         triton = Triton('triton', 'triton.local', 33576)
         builtins.triton = triton
-    elif instr_str == 'k6':
+    if instr_str == 'k6':
         k6 = Keithley_6221('k6', 'GPIB::12::INSTR')
         builtins.k6 = k6
     elif instr_str == 'k2182':
@@ -145,25 +142,17 @@ def triton_instrs(instr_str):
         k2200 = Keithley_2200('k2200', 'GPIB::19::INSTR')
         builtins.k2200 = k2200
     elif instr_str == 'seekat':
-        seekat = Seekat('seekat', 'COM7', timeout=8)  # the silver/white box (The black box is 'COM6')
+        seekat = Seekat('seekat', 'COM6', timeout=8)
         builtins.seekat = seekat
     elif instr_str == 'dacadc':
         dacadc = DAC_ADC('dacadc', 'COM9', timeout=8)
         builtins.dacadc = dacadc
-    elif instr_str == 'lockin830':
-        lockin830 = SR830('lockin830', 'GPIB0::8::INSTR')
-        builtins.lockin830 = lockin830
-    elif instr_str == 'lockin865':
-        lockin865 = SR865A('lockin865', 'GPIB0::4::INSTR')
-        builtins.lockin865 = lockin865
+    elif instr_str == 'lockin':
+        lockin = SR830('lockin', 'GPIB0::8::INSTR')
+        builtins.lockin = lockin
     elif instr_str == 'vdp':
         vdp = vdpArduino('vdp', 'COM10', timeout=6)
         builtins.vdp = vdp
     elif instr_str == 'sr560':
         sr560 = SR560('sr560', 'COM5')
         builtins.sr560 = sr560
-    elif instr_str == 'srframe':
-        srframe = SIM900('srframe', 'GPIB0::2::INSTR')
-        builtins.srframe = srframe
-    else:
-        print('{} is not listed in the instruments.'.format(instr_str))
