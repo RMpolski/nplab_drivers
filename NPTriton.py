@@ -244,7 +244,7 @@ class Triton(IPInstrument):
                 stat = 'on'
             else:
                 print('Temp reading status not determined')
-            print('{} - {}:  {} K'.format(i, getattr(self, stat, self.chan_alias[i])()))
+            print('{} - {}:  {} K'.format(i, stat, getattr(self, self.chan_alias[i])()))
 
     def read_pressures(self):
         for i in range(1,6):
@@ -391,10 +391,10 @@ class Triton(IPInstrument):
                 print('Magnet will not be used')
                 return
 
-        maxtempHon8T = 4.73
-        maxtempHon0T = 4.46
-        maxtempHoff8T = 4.5
-        maxtempHoff0T = 4.18
+        maxtempHon8T = 4.83
+        maxtempHon0T = 4.6
+        maxtempHoff8T = 4.68
+        maxtempHoff0T = 4.28
         magtemp = self.magnet_temp()
         if self.magnet_swh():
             f = np.abs(self.field())
@@ -451,10 +451,10 @@ class Triton(IPInstrument):
         # else:
         #     condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
 
-        maxtempHon8T = 4.73
-        maxtempHon0T = 4.46
-        maxtempHoff8T = 4.5
-        maxtempHoff0T = 4.18
+        maxtempHon8T = 4.83
+        maxtempHon0T = 4.6
+        maxtempHoff8T = 4.68
+        maxtempHoff0T = 4.28
         magtemp = self.magnet_temp()
         if self.magnet_swh():
             f = np.abs(self.field())
