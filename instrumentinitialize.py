@@ -9,7 +9,9 @@ from qcodes.instrument_drivers.nplab_drivers.Keithley_2200 import Keithley_2200
 from qcodes.instrument_drivers.nplab_drivers.LR_700 import LR_700
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
+from qcodes.instrument_drivers.nplab_drivers.SIM900 import SIM900
 from qcodes.instrument_drivers.stanford_research.SR830 import SR830
+from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
@@ -55,7 +57,7 @@ def ppms_init(*instruments):
             ppms_instrs(inst.lower())
 
 
-standardtriton = ('k6', 'lockin')  # triton always initializes
+standardtriton = ('srframe', 'lockin865')  # triton always initializes
 
 
 def triton_init(*instruments):
@@ -79,10 +81,7 @@ def triton_init(*instruments):
             for sinstr in standardtriton:
                 triton_instrs(sinstr.lower())
             # Put the initialization for standard instruments here
-            time.wait(1)
-            k6.compliance(0.2)
-            k6.AC_phasemark(1)
-            k6.AC_phasemark_offset(0)
+
             instruments = ('triton', *standardtriton, *[i for i in instruments if i.lower() != 'standard'])
         else:
             triton_instrs(inst.lower())
@@ -147,9 +146,15 @@ def triton_instrs(instr_str):
     elif instr_str == 'dacadc':
         dacadc = DAC_ADC('dacadc', 'COM9', timeout=8)
         builtins.dacadc = dacadc
-    elif instr_str == 'lockin':
-        lockin = SR830('lockin', 'GPIB0::8::INSTR')
-        builtins.lockin = lockin
+    elif instr_str == 'lockin830':
+        lockin = SR830('lockin830', 'GPIB0::8::INSTR')
+        builtins.lockin830 = lockin830
+    elif instr_str == 'lockin865':
+        lockin = SR865A('lockin865', 'GPIB0::4::INSTR')
+        builtins.lockin865 = lockin865
+    elif instr_str == 'srframe':
+        lockin = SIM900('srframe', 'GPIB0::2::INSTR')
+        builtins.srframe = srframe
     elif instr_str == 'vdp':
         vdp = vdpArduino('vdp', 'COM10', timeout=6)
         builtins.vdp = vdp
