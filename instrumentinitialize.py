@@ -147,13 +147,13 @@ def triton_instrs(instr_str):
         dacadc = DAC_ADC('dacadc', 'COM9', timeout=8)
         builtins.dacadc = dacadc
     elif instr_str == 'lockin830':
-        lockin = SR830('lockin830', 'GPIB0::8::INSTR')
+        lockin830 = SR830('lockin830', 'GPIB0::8::INSTR')
         builtins.lockin830 = lockin830
     elif instr_str == 'lockin865':
-        lockin = SR865A('lockin865', 'GPIB0::4::INSTR')
+        lockin865 = SR865A('lockin865', 'GPIB0::4::INSTR')
         builtins.lockin865 = lockin865
     elif instr_str == 'srframe':
-        lockin = SIM900('srframe', 'GPIB0::2::INSTR')
+        srframe = SIM900('srframe', 'GPIB0::2::INSTR')
         builtins.srframe = srframe
     elif instr_str == 'vdp':
         vdp = vdpArduino('vdp', 'COM10', timeout=6)
