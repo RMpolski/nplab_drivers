@@ -18,6 +18,7 @@ The ppms instrument driver (QD) requires you to install the packages pywin32 (`c
 If you want a summary of how to use this (it should also be useful if you've never used QCodes before), open the [NPDrivers_Example_use.ipynb](NPDrivers_Example_Use.ipynb) in a Jupyter Notebook while in the qcodes environment and go through the steps (you can run the code on your computer).
 
 Most commands here assume you import the nplab_drivers as follows:
+
 `import qcodes.instrument_drivers.nplab_drivers as npd`
 
 #### Functions from common_commands.py
