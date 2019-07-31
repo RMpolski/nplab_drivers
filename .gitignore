@@ -10,3 +10,6 @@ __pycache__/
 *.py~
 *.db
 tmp/
+
+# Data files
+.data

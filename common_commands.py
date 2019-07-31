@@ -9,7 +9,7 @@ from qcodes.instrument_drivers.nplab_drivers.time_params import time_from_start
 
 def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
                        DataName='', XParam=None, YParam=None,
-                       plot_results=True):
+                       plot_results=True, save_plots=True):
     """ Single parameter sweep, single measure (for more measurements, add
     parameters to the .each() part). Includes live plot.
 
@@ -32,6 +32,8 @@ def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
     YParam: Allows you to pick only a few parameters to plot out of those
                 measured. (if not mentioned, will plot all *MeasParams)
     plot_results: True by default, if false, suppresses plotting
+    save_plots: True by default. If false, doesn't save plots at the end of the
+                sweep
     """
 
     loop = qc.Loop(SetParam[SetArray], delay=delay).each(*MeasParams)
@@ -93,18 +95,22 @@ def single_param_sweep(SetParam, SetArray, delay, *MeasParams,
             loop.with_bg_task(_plot_update)
     try:
         loop.run()
-        _plot_save()
+        if save_plots and plot_results:
+            _plot_save()
         return data, plot
     except KeyboardInterrupt:
         if plot_results:
             _plot_update()
-            _plot_save()
+            if save_plots:
+                _plot_save()
         print('Keyboard Interrupt')
         return data, plot
 
 
 def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, *MeasParams,
-                     SetDelay1=0, SetDelay2=0, DataName='', ZParam=None, plot_results=True):
+                     SetDelay1=0, SetDelay2=0, Param2_SetBetween=None,
+                     DataName='', ZParam=None,
+                     plot_results=True, save_plots=True):
     """ Single parameter sweep, single measure (for more measurements, add
     parameters to the .each() part). Includes live plot. Note: if the SetParam1
     array is nonuniform, the y axis of the plot will be messed up. Try MatPlot
@@ -117,6 +123,9 @@ def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, *MeasParams,
     SetArray1: should be a list or numpy array of values you want to set
                 SetParam1 to. This array will be run through once
     SetParam2: The inner parameter to sweep (such as a voltage)
+    Param2_SetBetween: Sets parameter 2 to this value at the end of each
+                sweep of the parameter (completion of one row) and before
+                changing parameter 1.
     SetArray1: should be a list or numpy array of values you want to set
                 SetParam2 to. This array will be run through for each value of
                 SetArray1
@@ -130,11 +139,21 @@ def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, *MeasParams,
     ZParam: Allows you to pick only a few parameters to plot out of those
                 measured. (if not mentioned, will plot all *MeasParams)
     plot_results: True by default, if false, suppresses plotting
+    save_plots: True by default. If false, doesn't save plots at the end of the
+                sweep
     """
+
+    if Param2_SetBetween is None:
+        def between_func():
+            return
+    else:
+        def between_func():
+            SetParam2(Param2_SetBetween)
+            return
 
     twodloop = qc.Loop(SetParam1[SetArray1],
                        delay=SetDelay1).loop(SetParam2[SetArray2],
-                                             delay=SetDelay2).each(*MeasParams)
+                                             delay=SetDelay2).each(*MeasParams).then(qc.Task(between_func))
     data = twodloop.get_data_set(name=DataName)
     plot = []
 
@@ -171,18 +190,21 @@ def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, *MeasParams,
 
     try:
         twodloop.run()
-        _plot_save()
+        if save_plots and plot_results:
+            _plot_save()
         return data, plot
     except KeyboardInterrupt:
         if plot_results:
             _plot_update()
-            _plot_save()
+            if save_plots:
+                _plot_save()
         print('Keyboard Interrupt')
         return data, plot
 
 
 def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
-             XParam=None, YParam=None, plot_results=True, breakif=None):
+             XParam=None, YParam=None, breakif=None,
+             plot_results=True, save_plots=True):
     """A loop that takes measurements every "delay" seconds (starts measuring
     at startup, and each delay comes after the measurement). Either choose to
     measure N times or for minutes. The arrays of the data are: count_set
@@ -211,10 +233,13 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
             MeasParams
     YParam: optional specification of y-axis parameters to plot (if not
             specified, it will create one plot per MeasParam).
-    plot_results: if you want to do the data log without plots, set this to
-            False
     breakif: specify a parameterless function that returns true when the break
             condition is met (example ppms temperature < 2.01)
+    plot_results: if you want to do the data log without plots, set this to
+            False
+    save_plots: True by default. If false, doesn't save plots at the end of the
+                sweep
+
     """
     if breakif is None:
         def breakif():
@@ -296,14 +321,18 @@ def data_log(delay, *MeasParams, N=None, minutes=None, DataName='',
             #     for p in plot:
             #         p.save()
 
-            loop.with_bg_task(_plot_update, _plot_save)
+            loop.with_bg_task(_plot_update)
     try:
         time0.reset()
         loop.run()
+        if save_plots and plot_results:
+            _plot_save()
         return data, plot
     except KeyboardInterrupt:
-        _plot_update()
-        _plot_save()
+        if plot_results:
+            _plot_update()
+            if save_plots:
+                _plot_save()
         print('Keyboard Interrupt')
         return data, plot
 

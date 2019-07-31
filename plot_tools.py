@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from scipy.integrate import cumtrapz
 from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
 
 
 def mov_average(array, window):
@@ -38,6 +39,35 @@ def val_to_index(valuefindarray, array):
             print('Plotted {:.2f} instead'.format(array[int(indarray[count])]))
         count += 1
     return indarray
+
+
+def imshowplot(x, y, z, aspect=1, interpolation=None, cmap='viridis', norm=None):
+    """Makes a plot that is true to the data points. Pcolormesh naturally
+    interpolates and sets the bounds of the figure to the max and min setpoint
+    values, using n-1 pixels in each direction. This plots the pixels as they
+    were measured.
+
+    x, y: The setpoint values in x and y (1D arrays from left to right or
+            bottom to top)
+    z: The measured values in a 2D array
+    aspect: If the two setpoint values are not similar in similar in magnitude,
+            the plot will have an awkward aspect ratio. Change it with by
+            setting aspect < 1 to stretch in the x direction and > 1 to stretch
+            in the y direction.
+    interpolation: Smooth the dataset by choosing the interpolation (available
+            options can be found in plt.imshow)
+    cmap: The colormap to use"""
+
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+    y = y[::-1]
+    z = z[::-1]
+
+    extent = [x[0]-dx/2, x[-1]+dx/2, y[-1]+dy/2, y[0]-dy/2]
+    im = plt.imshow(z, extent=extent, aspect=aspect,
+                    interpolation=interpolation,
+                    cmap=cmap, norm=norm)
+    return im
 
 
 def iv_from_dvdi(dvdi, x, axis=1):
