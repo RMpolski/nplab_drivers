@@ -42,7 +42,10 @@ def val_to_index(valuefindarray, array):
 
 
 def imshowplot(x, y, z, aspect=1, interpolation=None, cmap='viridis', norm=None):
-    """Makes a plot that is true to the data points. Pcolormesh naturally
+    """
+    I don't think this quite works yet.
+    
+    Makes a plot that is true to the data points. Pcolormesh naturally
     interpolates and sets the bounds of the figure to the max and min setpoint
     values, using n-1 pixels in each direction. This plots the pixels as they
     were measured.

@@ -1,5 +1,8 @@
 """ Copied from the triton model in the Oxford instrument folder, with
-some variations and restrictions specifically applicable to our Triton"""
+some variations and restrictions specifically applicable to our Triton.
+
+This has an extra magnetic field sweep protection that disallows sweeping when
+the temperature is too high"""
 
 import configparser
 import re

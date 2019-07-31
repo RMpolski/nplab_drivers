@@ -1,4 +1,6 @@
-"""Created Feb 7, 2018 by Robert Polski"""
+"""Created Feb 7, 2018 by Robert Polski
+
+Not useable at the moment"""
 
 from qcodes import VisaInstrument
 import qcodes.utils.validators as vals
