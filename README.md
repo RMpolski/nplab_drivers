@@ -27,6 +27,9 @@ The biggest addition I made was adding 3 commands that summarize most measuremen
 #### Instrument initialization
 The instrumentinitialize file includes the method I use to quickly initialize the machines that I personally use. You can base your initialization off of this framework, but the details will be specific to your setup. `triton_init()` initializes our dilution fridge and other instruments specified by feeding the string codes of the instruments to the `triton_init()` command. Similarly with `ppms_init()`, which initializes the DynaCool ppms system and other instruments connected to it. This is not a verbose method but based on short names I have for the instruments and keeps consistency on a given instrument. It also prevents me from having to copy GPIB addresses when starting a new experiment.
 
+#### Custom instrument drivers
+I made a few instrument drivers that are customized to our setup, including the Dynacool PPMS fridge (1.7 to 400 K temperature range, +/- 9 T uniaxial magnet field range) and an Oxford Triton dilution fridge (+/- 8 T uniaxial magnet)
+
 #### Helper commands:
 I also added a few functions that I made to help with managing time-based parameters and plotting.
 
