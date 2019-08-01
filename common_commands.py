@@ -145,15 +145,16 @@ def twod_param_sweep(SetParam1, SetArray1, SetParam2, SetArray2, *MeasParams,
 
     if Param2_SetBetween is None:
         def between_func():
-            return
+            pass
     else:
         def between_func():
             SetParam2(Param2_SetBetween)
             return
 
+    innerloop = qc.Loop(SetParam2[SetArray2],
+                        delay=SetDelay2).each(*MeasParams)
     twodloop = qc.Loop(SetParam1[SetArray1],
-                       delay=SetDelay1).loop(SetParam2[SetArray2],
-                                             delay=SetDelay2).each(*MeasParams).then(qc.Task(between_func))
+                       delay=SetDelay1).each(innerloop, qc.Task(between_func))
     data = twodloop.get_data_set(name=DataName)
     plot = []
 
