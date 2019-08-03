@@ -12,6 +12,7 @@ import qcodes.utils.validators as vals
 from qcodes.utils.helpers import strip_attrs
 from functools import partial
 import serial
+import time
 
 # Helper functions ##########################
 
@@ -82,6 +83,8 @@ class DAC_ADC(Instrument):
                          'B': None,
                          'C': None,
                          'D': None}
+                         
+        self.adc_ctimes = {0: None, 1: None, 2: None, 3: None}
 
         self.add_parameter('DAC_A', set_cmd=partial(self.DAC_set, 'A'),
                            unit='V', vals=vals.Numbers(-10, 10))
@@ -99,8 +102,14 @@ class DAC_ADC(Instrument):
                            unit='V')
         self.add_parameter('ADC_3', get_cmd=partial(self.ADC_get, 3),
                            unit='V')
-        self.add_parameter('ADC_convert_time', set_cmd=self.ADC_setctime,
-                           unit='s')
+        self.add_parameter('ADC_0_convert_time', set_cmd=partial(self.ADC_setctime, 0),
+                           unit='us', vals=vals.Ints(82, 2682))
+        self.add_parameter('ADC_1_convert_time', set_cmd=partial(self.ADC_setctime, 1),
+                           unit='us', vals=vals.Ints(82, 2682))
+        self.add_parameter('ADC_2_convert_time', set_cmd=partial(self.ADC_setctime, 2),
+                           unit='us', vals=vals.Ints(82, 2682))
+        self.add_parameter('ADC_3_convert_time', set_cmd=partial(self.ADC_setctime, 3),
+                           unit='us', vals=vals.Ints(82, 2682))
 
         if reset:
             self.reset()
@@ -159,16 +168,19 @@ class DAC_ADC(Instrument):
         ch can be an integer from 0 to 3"""
         return ADC_getvolt(self._ser, ch)
 
-    def ADC_setctime(self, time: int):
-        """ Sets the ADC convert time in microseconds.
-        More time: less noise. Less time, more noise but faster"""
-        self._ser.write('CONVERT_TIME,'+str(time)+'\r')
+    def ADC_setctime(self, ch, t):
+        con_ch = ch_convert('ADC', ch)
+        s = 'CONVERT_TIME,' + con_ch + ',' + str(int(t)) + '\r'
+        _ret = self._ser.write(s.encode('utf-8'))
+        mes = self._ser.readline().decode('utf-8')
+        self.adc_ctimes[ch] = int(mes.strip())
+        
 
     def if_ready(self):
         """ Returns True if DAC-ADC is ready for the next command and False
         if not"""
-        self._ser.write('*RDY?\r')
-        if self._ser.readline() == 'READY\r\n':
+        self._ser.write('*RDY?\r'.encode('utf-8'))
+        if self._ser.readline().decode('utf-8') == 'READY\r\n':
             return True
         else:
             return False
