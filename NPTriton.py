@@ -394,10 +394,10 @@ class Triton(IPInstrument):
                 print('Magnet will not be used')
                 return
 
-        maxtempHon8T = 4.83
+        maxtempHon8T = 4.87
         maxtempHon0T = 4.6
-        maxtempHoff8T = 4.68
-        maxtempHoff0T = 4.28
+        maxtempHoff8T = 4.7
+        maxtempHoff0T = 4.3
         magtemp = self.magnet_temp()
         if self.magnet_swh():
             f = np.abs(self.field())
@@ -454,10 +454,10 @@ class Triton(IPInstrument):
         # else:
         #     condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
 
-        maxtempHon8T = 4.83
+        maxtempHon8T = 4.87
         maxtempHon0T = 4.6
-        maxtempHoff8T = 4.68
-        maxtempHoff0T = 4.28
+        maxtempHoff8T = 4.7
+        maxtempHoff0T = 4.3
         magtemp = self.magnet_temp()
         if self.magnet_swh():
             f = np.abs(self.field())
