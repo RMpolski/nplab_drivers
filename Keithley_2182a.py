@@ -92,6 +92,7 @@ class Keithley_2182a(VisaInstrument):
                            unit='V')
         self.add_parameter('trigread',
                            label='Voltage',
+                           snapshot_get=False,
                            get_cmd=self._trigread_get,
                            get_parser=float,
                            unit='V')
@@ -99,6 +100,7 @@ class Keithley_2182a(VisaInstrument):
                            label='Voltage',
                            get_cmd=':READ?',
                            get_parser=float,
+                           snapshot_get=False,
                            unit='V')
         self.add_parameter('nplc',
                            get_cmd=partial(self._get_mode_param, 'NPLC',),
