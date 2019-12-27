@@ -20,6 +20,7 @@ from qcodes.instrument_drivers.nplab_drivers.plot_tools import (get2d_dat,
                                                     iv_from_dvdi,
                                                     Rxxfromdata,
                                                     DivLogNorm,
+                                                    DivSymLogNorm,
                                                     graphene_mobilityFE,
                                                     graphene_mobilityB,
                                                     gr_Boltzmannfit)

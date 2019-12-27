@@ -313,6 +313,40 @@ class DivLogNorm(Normalize):
         # docstring inherited.
         super().autoscale_None(np.ma.masked_less_equal(A, 0, copy=False))
 
+class DivSymLogNorm(colors.SymLogNorm):
+    def __init__(self, linthresh, centerpct=0.5, linscale=1.0, vmin=None, vmax=None, clip=False):
+        super().__init__(linthresh, linscale, vmin, vmax, clip)
+        self.centerpct = centerpct
+
+    def __call__(self, value, clip=None):
+        if clip is None:
+            clip = self.clip
+
+        result, is_scalar = self.process_value(value)
+        self.autoscale_None(result)
+        vmin, vmax = self.vmin, self.vmax
+
+        if vmin > vmax:
+            raise ValueError("minvalue must be less than or equal to maxvalue")
+        elif vmin == vmax:
+            result.fill(0)
+        else:
+            if clip:
+                mask = np.ma.getmask(result)
+                result = np.ma.array(np.clip(result.filled(vmax), vmin, vmax),
+                                     mask=mask)
+            # in-place equivalent of above can be much faster
+            resdat = self._transform(result.data)
+            resdat -= self._lower
+            resdat /= (self._upper - self._lower)
+            result = np.ma.masked_array(
+                np.interp(result, [0, self.centerpct, 1],
+                          [0, 0.5, 1.]), mask=np.ma.getmask(result))
+
+        if is_scalar:
+            result = result[0]
+        return result
+
 # # For use with nplab_qtplot_v0.2.5... Won't install if qtplot isn't installed
 reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
 installed_packages = [r.decode() for r in reqs.split()]
