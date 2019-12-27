@@ -1,4 +1,5 @@
 import sys
+import subprocess
 
 from qcodes.instrument_drivers.tektronix.Keithley_2000 import Keithley_2000
 from qcodes.instrument_drivers.nplab_drivers.Keithley_6221 import Keithley_6221
@@ -17,6 +18,8 @@ from qcodes.instrument_drivers.nplab_drivers.plot_tools import (get2d_dat,
                                                     dvdi2dfromiv, concat_2d,
                                                     val_to_index, mov_average,
                                                     iv_from_dvdi,
+                                                    Rxxfromdata,
+                                                    DivLogNorm,
                                                     graphene_mobilityFE,
                                                     graphene_mobilityB,
                                                     gr_Boltzmannfit)
@@ -39,3 +42,8 @@ from qcodes.instrument_drivers.nplab_drivers.instrumentinitialize import (
 
 if sys.platform == 'win32':
     from qcodes.instrument_drivers.nplab_drivers.QD import QD
+
+reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
+installed_packages = [r.decode() for r in reqs.split()]
+if 'qtplot==0.2.5' in installed_packages:
+    from qcodes.instrument_drivers.nplab_drivers.plot_tools import qt2dplot

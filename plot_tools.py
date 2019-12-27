@@ -4,6 +4,10 @@ import numpy as np
 from scipy.integrate import cumtrapz
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+from matplotlib.colors import Normalize
+import subprocess
+import sys
 
 
 def mov_average(array, window):
@@ -44,7 +48,7 @@ def val_to_index(valuefindarray, array):
 def imshowplot(x, y, z, aspect=1, interpolation=None, cmap='viridis', norm=None):
     """
     I don't think this quite works yet.
-    
+
     Makes a plot that is true to the data points. Pcolormesh naturally
     interpolates and sets the bounds of the figure to the max and min setpoint
     values, using n-1 pixels in each direction. This plots the pixels as they
@@ -218,6 +222,120 @@ def concat_2d(dsets, xparam, yparam, zparam):
     Z = np.array(zfinalvals)[indsort]
 
     return X, Y, Z
+
+def Rxxfromdata(dset, current, instrument='lockin865', Rswitchohms=50000):
+    """Use X for values less than 50000 ohms (or whatever the value of
+    Rswitchohms you want) and R for anything larger.
+
+    dset is the dataset from qc.load_data(), current is the constant
+    current amplitude used (in A),
+    and instrument can be lockin865 (default) or lockin830 if you want"""
+    X = getattr(dset, str(instrument) + '_X')[:]/current
+    Y = getattr(dset, str(instrument) + '_Y')[:]/current
+    R = np.sqrt(X**2 + Y**2)
+
+    if len(X.shape) == 1:
+        for i, r in enumerate(R):
+            if r > Rswitchohms:
+                X[i] = r
+    elif len(X.shape) == 2:
+        for j in range(R.shape[0]):
+            for i, r in enumerate(R[j, :]):
+                if r > 5*10**4:
+                    X[j, i] = r
+
+    return X
+
+class DivLogNorm(Normalize):
+    """Normalize a given value to the 0-1 range on a log scale. The first
+    arg (centerpct) is the centerpoint of the diverging colors (between 0
+    and 1)"""
+    def __init__(self, centerpct, vmin=None, vmax=None, clip=False):
+        super().__init__(vmin, vmax, clip)
+        self.centerpct = centerpct
+
+    def __call__(self, value, clip=None):
+        if clip is None:
+            clip = self.clip
+
+        result, is_scalar = self.process_value(value)
+
+        result = np.ma.masked_less_equal(result, 0, copy=False)
+
+        self.autoscale_None(result)
+        vmin, vmax = self.vmin, self.vmax
+        if vmin > vmax:
+            raise ValueError("minvalue must be less than or equal to maxvalue")
+        elif vmin <= 0:
+            raise ValueError("values must all be positive")
+        elif vmin == vmax:
+            result.fill(0)
+        else:
+            if clip:
+                mask = np.ma.getmask(result)
+                result = np.ma.array(np.clip(result.filled(vmax), vmin, vmax),
+                                     mask=mask)
+            # in-place equivalent of above can be much faster
+            resdat = result.data
+            mask = result.mask
+            if mask is np.ma.nomask:
+                mask = (resdat <= 0)
+            else:
+                mask |= resdat <= 0
+            np.copyto(resdat, 1, where=mask)
+            np.log(resdat, resdat)
+            resdat -= np.log(vmin)
+            resdat /= (np.log(vmax) - np.log(vmin))
+            result = np.ma.array(resdat, mask=mask, copy=False)
+            result = np.ma.masked_array(
+                np.interp(result, [0, self.centerpct, 1],
+                          [0, 0.5, 1.]), mask=np.ma.getmask(result))
+        if is_scalar:
+            result = result[0]
+        return result
+
+    def inverse(self, value):
+        if not self.scaled():
+            raise ValueError("Not invertible until scaled")
+        vmin, vmax = self.vmin, self.vmax
+
+        if np.iterable(value):
+            val = np.ma.asarray(value)
+            return vmin * np.ma.power((vmax / vmin), val)
+        else:
+            return vmin * pow((vmax / vmin), value)
+
+    def autoscale(self, A):
+        # docstring inherited.
+        super().autoscale(np.ma.masked_less_equal(A, 0, copy=False))
+
+    def autoscale_None(self, A):
+        # docstring inherited.
+        super().autoscale_None(np.ma.masked_less_equal(A, 0, copy=False))
+
+# # For use with nplab_qtplot_v0.2.5... Won't install if qtplot isn't installed
+reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
+installed_packages = [r.decode() for r in reqs.split()]
+if 'qtplot==0.2.5' in installed_packages:
+    import qtplot
+
+    def qt2dplot(xdata, ydata, zdata):
+        """import xdata, ydata as 1d arrays. Zdata as a 2d array
+        This function plots the data in qtplot"""
+        zs = zdata.shape
+        xx, yy = np.mgrid[0:zs[0], 0:zs[1]]
+        xd = np.tensordot(xdata, np.ones(zs[0]), axes=0).T
+        yd = np.tensordot(ydata, np.ones(zs[1]), axes=0)
+        boo = [xd.shape == zs, yd.shape == zs]
+        if all(boo):
+            plot_data = qtplot.qtplot.Data2D(xd, yd, zdata, row_numbers=xx)  # row numbers can be xx or yy?
+            return qtplot.qtplot.QTPlot(plot_data)
+        else:
+            print('You need all of these to match. Check the dimensions of the data arrays.')
+            print('xdata shape: {}'.format(xd.shape))
+            print('ydata shape: {}'.format(yd.shape))
+            print('zdata shape: {}'.format(zs))
+
 
 
 # TODO: Make these functions work with datasets: below
