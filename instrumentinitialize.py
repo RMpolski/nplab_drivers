@@ -115,10 +115,10 @@ def ppms_instrs(instr_str):
         lr700 = LR_700('lr700', 'GPIB::18::INSTR')
         builtins.lr700 = lr700
     elif instr_str == 'lockin1':
-        lockin1 = SR830('lockin1', 'GPIB0::1::INSTR')
+        lockin1 = SR830('lockin1', 'GPIB0::10::INSTR')
         builtins.lockin1 = lockin1
     elif instr_str == 'lockin2':
-        lockin2 = SR830('lockin2', 'GPIB0::4::INSTR')
+        lockin2 = SR830('lockin2', 'GPIB0::1::INSTR')
         builtins.lockin2 = lockin2
     elif instr_str == 'vdp':
         vdp = vdpArduino('vdp', 'COM10', timeout=6)
