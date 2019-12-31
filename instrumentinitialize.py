@@ -125,6 +125,7 @@ def ppms_instrs(instr_str):
         builtins.vdp = vdp
     elif instr_str == 'srdc':
         srdc = SRDC205('srdc', 'COM5')
+        builtins.srdc = srdc
 
 
 def triton_instrs(instr_str):
