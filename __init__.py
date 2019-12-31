@@ -14,6 +14,7 @@ from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
+from qcodes.instrument_drivers.nplab_drivers.SRDC205 import SRDC205
 from qcodes.instrument_drivers.nplab_drivers.plot_tools import (get2d_dat,
                                                     dvdi2dfromiv, concat_2d,
                                                     val_to_index, mov_average,
