@@ -15,6 +15,7 @@ from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
+from qcodes.instrument_drivers.nplab_drivers.SRDC205 import SRDC205
 import builtins
 
 if sys.platform == 'win32':
@@ -122,6 +123,8 @@ def ppms_instrs(instr_str):
     elif instr_str == 'vdp':
         vdp = vdpArduino('vdp', 'COM10', timeout=6)
         builtins.vdp = vdp
+    elif instr_str == 'srdc':
+        srdc = SRDC205('srdc', 'COM5')
 
 
 def triton_instrs(instr_str):
