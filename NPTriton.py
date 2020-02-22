@@ -418,11 +418,11 @@ class Triton(IPInstrument):
                 interc = p4temp - sl*0.4
                 condit_temp = sl*f + interc
 
-        while magtemp >= condit_temp:
-            print('The magnet temperature is {:.4f} K. '.format(magtemp) +
-                  'Waiting for it to drop < {:.4f} K'.format(condit_temp))
-            sleep(15)
-            magtemp = self.magnet_temp()
+        # while magtemp >= condit_temp:
+            # print('The magnet temperature is {:.4f} K. '.format(magtemp) +
+                  # 'Waiting for it to drop < {:.4f} K'.format(condit_temp))
+            # sleep(15)
+            # magtemp = self.magnet_temp()
 
         s = self.magnet_sweeprate()
         x = 0
@@ -478,11 +478,11 @@ class Triton(IPInstrument):
                 interc = p4temp - sl*0.4
                 condit_temp = sl*f + interc
 
-        while magtemp >= condit_temp:
-            print('The magnet temperature is {:.4f} K. '.format(magtemp) +
-                  'Waiting for it to drop < {:.4f} K'.format(condit_temp))
-            sleep(15)
-            magtemp = self.magnet_temp()
+        # while magtemp >= condit_temp:
+            # print('The magnet temperature is {:.4f} K. '.format(magtemp) +
+                  # 'Waiting for it to drop < {:.4f} K'.format(condit_temp))
+            # sleep(15)
+            # magtemp = self.magnet_temp()
 
         s = self.magnet_sweeprate()
         x = 0
