@@ -165,3 +165,6 @@ def triton_instrs(instr_str):
     elif instr_str == 'sr560':
         sr560 = SR560('sr560', 'COM5')
         builtins.sr560 = sr560
+    elif instr_str == 'srdc':
+        srdc = SRDC205('srdc', 'COM3')
+        builtins.srdc = srdc
