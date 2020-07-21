@@ -11,7 +11,7 @@ import logging
 from traceback import format_exc
 
 from qcodes import IPInstrument
-from qcodes.utils.validators import Enum, Ints
+from qcodes.utils.validators import Enum, Ints, Numbers
 
 from time import sleep
 import numpy as np
@@ -201,6 +201,24 @@ class Triton(IPInstrument):
                            unit='T/min',
                            get_cmd=partial(self._get_control_B_param, 'RVST:TIME'))
 
+        self.add_parameter(name='MC_heater',
+                           label='Mixing chamber heater power',
+                           unit='uW',
+                           get_cmd='READ:DEV:H1:HTR:SIG:POWR',
+                           set_cmd='SET:DEV:H1:HTR:SIG:POWR:{}',
+                           get_parser=_parse_htr,
+                           set_parser=float,
+                           vals=Numbers(0, 300000))
+
+        self.add_parameter(name='still_heater',
+                           label='Still heater power',
+                           unit='uW',
+                           get_cmd='READ:DEV:H2:HTR:SIG:POWR',
+                           set_cmd='SET:DEV:H2:HTR:SIG:POWR:{}',
+                           get_parser=_parse_htr,
+                           set_parser=float,
+                           vals=Numbers(0, 300000))
+
         self.add_parameter(name='turbo_speed',
                            unit='Hz',
                            get_cmd='READ:DEV:TURB1:PUMP:SIG:SPD',
@@ -334,8 +352,7 @@ class Triton(IPInstrument):
 
     def _set_control_channel(self, channel):
         self._control_channel = channel
-        self.write('SET:DEV:T{}:TEMP:LOOP:HTR:H1'.format(
-            self._get_control_channel()))
+        self.write('SET:DEV:T{}:TEMP:LOOP:HTR:H1'.format(channel))
 
     def _get_control_param(self, param):
         chan = self._get_control_channel()
@@ -358,6 +375,7 @@ class Triton(IPInstrument):
             print(
                 'Warning: set sweeprate in range (0 , 0.205] T/min, not setting sweeprate')
 
+## We don't have the vector magnet option.
     # def _set_control_Bx_param(self, x):
     #     s = self.magnet_sweeprate()
     #     y = round(self.By(), 4)
@@ -394,35 +412,36 @@ class Triton(IPInstrument):
                 print('Magnet will not be used')
                 return
 
-        maxtempHon8T = 4.87
-        maxtempHon0T = 4.6
-        maxtempHoff8T = 4.7
-        maxtempHoff0T = 4.3
-        magtemp = self.magnet_temp()
-        if self.magnet_swh():
-            f = np.abs(self.field())
-            if f < 0.4:
-                condit_temp = maxtempHon0T + np.sqrt(0.02*f)
-            else:
-                p4temp = maxtempHon0T + np.sqrt(0.02*0.4)
-                sl = (maxtempHon8T - p4temp)/(8-0.4)
-                interc = p4temp - sl*0.4
-                condit_temp = sl*f + interc
-        else:
-            f = np.abs(self.field())
-            if f < 0.4:
-                condit_temp = maxtempHoff0T + np.sqrt(0.02*f)
-            else:
-                p4temp = maxtempHoff0T + np.sqrt(0.02*0.4)
-                sl = (maxtempHoff8T - p4temp)/(8-0.4)
-                interc = p4temp - sl*0.4
-                condit_temp = sl*f + interc
+        ## Turn this off for now. Just be cautious when using the magnet
+        # maxtempHon8T = 4.87
+        # maxtempHon0T = 4.6
+        # maxtempHoff8T = 4.7
+        # maxtempHoff0T = 4.3
+        # magtemp = self.magnet_temp()
+        # if self.magnet_swh():
+        #     f = np.abs(self.field())
+        #     if f < 0.4:
+        #         condit_temp = maxtempHon0T + np.sqrt(0.02*f)
+        #     else:
+        #         p4temp = maxtempHon0T + np.sqrt(0.02*0.4)
+        #         sl = (maxtempHon8T - p4temp)/(8-0.4)
+        #         interc = p4temp - sl*0.4
+        #         condit_temp = sl*f + interc
+        # else:
+        #     f = np.abs(self.field())
+        #     if f < 0.4:
+        #         condit_temp = maxtempHoff0T + np.sqrt(0.02*f)
+        #     else:
+        #         p4temp = maxtempHoff0T + np.sqrt(0.02*0.4)
+        #         sl = (maxtempHoff8T - p4temp)/(8-0.4)
+        #         interc = p4temp - sl*0.4
+        #         condit_temp = sl*f + interc
 
-        while magtemp >= condit_temp:
-            print('The magnet temperature is {:.4f} K. '.format(magtemp) +
-                  'Waiting for it to drop < {:.4f} K'.format(condit_temp))
-            sleep(15)
-            magtemp = self.magnet_temp()
+        # while magtemp >= condit_temp:
+        #     print('The magnet temperature is {:.4f} K. '.format(magtemp) +
+        #           'Waiting for it to drop < {:.4f} K'.format(condit_temp))
+        #     sleep(15)
+        #     magtemp = self.magnet_temp()
 
         s = self.magnet_sweeprate()
         x = 0
@@ -432,8 +451,8 @@ class Triton(IPInstrument):
         self.write('SET:SYS:VRM:ACTN:RTOS')
         # just to give an time estimate, +10s for overhead
         t_wait = self.magnet_sweep_time() * 60 + 10
-        print('Please wait ' + str(t_wait) + ' seconds for the field sweep, ' +
-              'plus the time required for operating the switch...')
+        # print('Please wait ' + str(t_wait) + ' seconds for the field sweep, ' +
+        #       'plus the time required for operating the switch...')
         while self.magnet_status() != 'IDLE':
             pass
 
@@ -447,42 +466,36 @@ class Triton(IPInstrument):
                 print('Magnet will not be used')
                 return
 
-        ## First tried to use a linear slope.
+        ## Turn this off for now. Just be cautious when using the magnet
+        # maxtempHon8T = 4.87
+        # maxtempHon0T = 4.6
+        # maxtempHoff8T = 4.7
+        # maxtempHoff0T = 4.3
         # magtemp = self.magnet_temp()
         # if self.magnet_swh():
-        #     condit_temp = 4.45 + np.abs(self.field())/8*0.23
+        #     f = np.abs(self.field())
+        #     if f < 0.4:
+        #         condit_temp = maxtempHon0T + np.sqrt(0.02*f)
+        #     else:
+        #         p4temp = maxtempHon0T + np.sqrt(0.02*0.4)
+        #         sl = (maxtempHon8T - p4temp)/(8-0.4)
+        #         interc = p4temp - sl*0.4
+        #         condit_temp = sl*f + interc
         # else:
-        #     condit_temp = 4.15 + np.abs(self.field())/8*(0.35)
+        #     f = np.abs(self.field())
+        #     if f < 0.4:
+        #         condit_temp = maxtempHoff0T + np.sqrt(0.02*f)
+        #     else:
+        #         p4temp = maxtempHoff0T + np.sqrt(0.02*0.4)
+        #         sl = (maxtempHoff8T - p4temp)/(8-0.4)
+        #         interc = p4temp - sl*0.4
+        #         condit_temp = sl*f + interc
 
-        maxtempHon8T = 4.87
-        maxtempHon0T = 4.6
-        maxtempHoff8T = 4.7
-        maxtempHoff0T = 4.3
-        magtemp = self.magnet_temp()
-        if self.magnet_swh():
-            f = np.abs(self.field())
-            if f < 0.4:
-                condit_temp = maxtempHon0T + np.sqrt(0.02*f)
-            else:
-                p4temp = maxtempHon0T + np.sqrt(0.02*0.4)
-                sl = (maxtempHon8T - p4temp)/(8-0.4)
-                interc = p4temp - sl*0.4
-                condit_temp = sl*f + interc
-        else:
-            f = np.abs(self.field())
-            if f < 0.4:
-                condit_temp = maxtempHoff0T + np.sqrt(0.02*f)
-            else:
-                p4temp = maxtempHoff0T + np.sqrt(0.02*0.4)
-                sl = (maxtempHoff8T - p4temp)/(8-0.4)
-                interc = p4temp - sl*0.4
-                condit_temp = sl*f + interc
-
-        while magtemp >= condit_temp:
-            print('The magnet temperature is {:.4f} K. '.format(magtemp) +
-                  'Waiting for it to drop < {:.4f} K'.format(condit_temp))
-            sleep(15)
-            magtemp = self.magnet_temp()
+        # while magtemp >= condit_temp:
+        #     print('The magnet temperature is {:.4f} K. '.format(magtemp) +
+        #           'Waiting for it to drop < {:.4f} K'.format(condit_temp))
+        #     sleep(15)
+        #     magtemp = self.magnet_temp()
 
         s = self.magnet_sweeprate()
         x = 0
@@ -492,7 +505,7 @@ class Triton(IPInstrument):
         self.write('SET:SYS:VRM:ACTN:RTOS')
         # just to give an time estimate, +10s for overhead
         t_wait = self.magnet_sweep_time() * 60 + 10
-        print('Sweep time approximately ' + str(t_wait) + ' seconds')
+        # print('Sweep time approximately ' + str(t_wait) + ' seconds')
         return
 
     def _set_swh(self, val):
@@ -556,20 +569,31 @@ class Triton(IPInstrument):
             self.chan_valves.append(chan)
             self.add_parameter(name=chan,
                                get_cmd='READ:DEV:%s:VALV:SIG:STATE' % chan,
-                               get_parser=self._parse_valve_state)
+                               set_cmd='SET:DEV:%s:VALV:SIG:STATE:{}' % chan,
+                               get_parser=self._parse_valve_state,
+                               vals=Enum('OPEN', 'CLOSE', 'TOGGLE'))
         self.chan_valves = set(self.chan_valves)
 
     def _get_pump_channels(self):
         self.chan_pumps = ['turbo', 'knf', 'forepump']
         self.add_parameter(name='turbo',
                            get_cmd='READ:DEV:TURB1:PUMP:SIG:STATE',
-                           get_parser=self._parse_state)
+                           set_cmd='SET:DEV:TURB1:PUMP:SIG:STATE:{}',
+                           get_parser=self._parse_state,
+                           set_parser=parse_inp_bool,
+                           vals=Enum(*boolcheck))
         self.add_parameter(name='knf',
                            get_cmd='READ:DEV:COMP:PUMP:SIG:STATE',
-                           get_parser=self._parse_state)
+                           set_cmd='SET:DEV:COMP:PUMP:SIG:STATE:{}',
+                           get_parser=self._parse_state,
+                           set_parser=parse_inp_bool,
+                           vals=Enum(*boolcheck))
         self.add_parameter(name='forepump',
                            get_cmd='READ:DEV:FP:PUMP:SIG:STATE',
-                           get_parser=self._parse_state)
+                           set_cmd='SET:DEV:FP:PUMP:SIG:STATE:{}',
+                           get_parser=self._parse_state,
+                           set_parser=parse_inp_bool,
+                           vals=Enum(*boolcheck))
         self.chan_pumps = set(self.chan_pumps)
 
     def _get_temp_channels(self):
@@ -584,10 +608,38 @@ class Triton(IPInstrument):
             self.add_parameter(name=chan+'_enable',
                                get_cmd='READ:DEV:%s:TEMP:MEAS:ENAB' % chan,
                                get_parser=self._parse_state,
-                               set_cmd='SET:DEV:%s:TEMP:MEAS:ENAB:{}',
+                               set_cmd='SET:DEV:%s:TEMP:MEAS:ENAB:{}' % chan,
                                set_parser=parse_inp_bool,
                                vals=Enum(*boolcheck))
         self.chan_temps = set(self.chan_temps)
+
+    def fullcooldown(self):
+        "Starts the full cooldown automation"
+        triton.write('SET:SYS:DR:ACTN:CLDN')
+
+    def condense(self):
+        "Starts condensing (use only if < about 15K)"
+        triton.write('SET:SYS:DR:ACTN:COND')
+
+    def mixture_collect(self):
+        "Starts collecting the mixture into the tank"
+        triton.write('SET:SYS:DR:ACTN:COLL')
+
+    def precool(self):
+        "Starts a pre-cool (doesn't continue to the next step automatically)"
+        triton.write('SET:SYS:DR:ACTN:PCL')
+
+    def pause_precool(self):
+        "Pauses the pre-cool automation"
+        triton.write('SET:SYS:DR:ACTN:PCOND')
+
+    def resume_precool(self):
+        "Resumes the pre-cool automation"
+        triton.write('SET:SYS:DR:ACTN:RCOND')
+
+    def stopcool(self):
+        "Stops any running automation"
+        triton.write('SET:SYS:ACTN:STOP')
 
     def _parse_action(self, msg):
         """ Parse message and return action as a string
@@ -663,6 +715,11 @@ class Triton(IPInstrument):
         else:
             print('unknown switch heater state')
             return msg
+
+    def _parse_htr(self, msg):
+        if 'NOT_FOUND' in msg:
+            return None
+        return float(msg.split('SIG:POWR:')[-1].strip('uW'))
 
     def _recv(self):
         return super()._recv().rstrip()
