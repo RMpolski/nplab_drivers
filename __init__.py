@@ -41,7 +41,8 @@ from qcodes.instrument_drivers.nplab_drivers.common_commands import (
 
 from qcodes.instrument_drivers.nplab_drivers.instrumentinitialize import (
         ppms_init,
-        triton_init)
+        triton_init,
+        stick_setup_init)
 
 if sys.platform == 'win32':
     from qcodes.instrument_drivers.nplab_drivers.QD import QD
