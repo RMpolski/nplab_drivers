@@ -21,7 +21,7 @@ def parse_inp_bool(value):
         print(value)
         raise ValueError('Must be boolean, on or off, 0 or 1, True or False')
 
-class Lakeshore211(VisaInstrument):
+class Lakeshore211(Instrument):
     """ Driver for the lakeshore 211 temperature sensor, using its DB9
     RS-232 interface. (On the lab computer 'COM4')"""
 
