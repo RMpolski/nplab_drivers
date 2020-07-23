@@ -32,25 +32,26 @@ class SRDC205(Instrument):
         super().__init__(name, **kwargs)
 
         self.address = address
+        self.terminator = '\n'
         self._open_serial_connection(timeout)
 
-        self.add_parameter(name='volt', get_cmd=partial(self.getval, 'VOLT?'),
-                           set_cmd=partial(self.setval, 'VOLT'),
+        self.add_parameter(name='volt', get_cmd='VOLT?',
+                           set_cmd='VOLT {}',
                            get_parser=float,
                            set_parser=self.voltsetparse,
                            vals=vals.Numbers(-100, 100))
-        self.add_parameter(name='range', get_cmd=partial(self.getval, 'RNGE?'),
-                           set_cmd=partial(self.setval, 'RNGE'),
+        self.add_parameter(name='range', get_cmd='RNGE?',
+                           set_cmd='RNGE {}',
                            get_parser=int,
                            setparser=int, vals=vals.Ints(0, 2))
-        self.add_parameter(name='output', get_cmd=partial(self.getval, 'SOUT?'),
-                           set_cmd=partial(self.setval, 'SOUT'),
+        self.add_parameter(name='output', get_cmd='SOUT?',
+                           set_cmd='SOUT {}',
                            set_parser=parse_inp_bool,
                            get_parser=int,
                            vals=vals.Enum(*boolcheck))
         self.add_parameter(name='isolation',
-                           get_cmd=partial(self.getval, 'ISOL?'),
-                           set_cmd=partial(self.setval, 'ISOL'),
+                           get_cmd='ISOL?',
+                           set_cmd='ISOL {}',
                            set_parser=int,
                            get_parser=int,
                            vals=vals.Ints(0, 1))
@@ -81,7 +82,7 @@ class SRDC205(Instrument):
 
     def get_idn(self):
         """ The idn for this instrument also comes from the *IDN command, but
-        it needs a \r endline character, and it only returns the instrument
+        it needs a \n endline character, and it only returns the instrument
         name"""
         idstr = ''  # in case self.ask fails
         try:
@@ -109,14 +110,25 @@ class SRDC205(Instrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def getval(self, getstring):
-        s = getstring + '\n'
-        self._ser.write(s.encode('utf-8'))
+    def ask_raw(self, cmd):
+        cmd += self.terminator
+        self._ser.write(cmd.encode('utf-8'))
         return self._ser.readline().decode('utf-8').strip()
 
-    def setval(self, setstring, val):
-        s = setstring + ' ' + str(val) + '\n'
-        self._ser.write(s.encode('utf-8'))
+    def write_raw(self, cmd):
+        cmd += self.terminator
+        self._ser.write(cmd.encode('utf-8'))
+
+    ## method that's a little bulkier and less functional but still works
+    ## use partial(getval/setval, cmdstring)
+    # def getval(self, getstring):
+    #     s = getstring + '\n'
+    #     self._ser.write(s.encode('utf-8'))
+    #     return self._ser.readline().decode('utf-8').strip()
+    #
+    # def setval(self, setstring, val):
+    #     s = setstring + ' ' + str(val) + '\n'
+    #     self._ser.write(s.encode('utf-8'))
 
     def voltsetparse(self, val):
         return np.round(float(val), 7)
