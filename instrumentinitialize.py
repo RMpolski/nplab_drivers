@@ -16,6 +16,7 @@ from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
 from qcodes.instrument_drivers.nplab_drivers.SRDC205 import SRDC205
+from qcodes.instrument_drivers.nplab_drivers.Lakeshore211 import Lakeshore211
 import builtins
 
 if sys.platform == 'win32':
@@ -88,6 +89,9 @@ def triton_init(*instruments):
             triton_instrs(inst.lower())
             # Put any extra standards here
 
+def stick_setup_init(*instruments):
+    for inst in instruments:
+        stick_setup_instrs(inst.lower())
 
 def ppms_instrs(instr_str):
     if instr_str == 'k6':
@@ -168,3 +172,11 @@ def triton_instrs(instr_str):
     elif instr_str == 'srdc':
         srdc = SRDC205('srdc', 'COM3')
         builtins.srdc = srdc
+
+def stick_setup_instrs(instr_str):
+    if instr_str == 'lakeshore':
+        lakeshore = Lakeshore211('lakeshore', 'COM4')
+        builtins.lakeshore = lakeshore
+    if instr_str == 'lockin830':
+        lockin830 = SR830('lockin830', 'GPIB0::8::INSTR')
+        builtins.lockin830 = lockin830

@@ -29,7 +29,7 @@ class Lakeshore211(Instrument):
         super().__init__(name, **kwargs)
 
         self.address = address
-        self.terminator = '\r\n'
+        self.terminator = terminator
         self._open_serial_connection(timeout)
 
         self.add_parameter('temperature', get_cmd='KRDG?',
