@@ -175,8 +175,11 @@ def triton_instrs(instr_str):
 
 def stick_setup_instrs(instr_str):
     if instr_str == 'lakeshore':
-        lakeshore = Lakeshore211('lakeshore', 'COM4')
+        lakeshore = Lakeshore211('lakeshore', 'COM5')
         builtins.lakeshore = lakeshore
     if instr_str == 'lockin830':
         lockin830 = SR830('lockin830', 'GPIB0::8::INSTR')
         builtins.lockin830 = lockin830
+    if instr_str == 'srdc':
+        srdc = SRDC205('srdc', 'COM3')
+        builtins.srdc = srdc

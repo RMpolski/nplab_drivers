@@ -43,7 +43,7 @@ class SRDC205(Instrument):
         self.add_parameter(name='range', get_cmd='RNGE?',
                            set_cmd='RNGE {}',
                            get_parser=int,
-                           setparser=int, vals=vals.Ints(0, 2))
+                           set_parser=int, vals=vals.Ints(0, 2))
         self.add_parameter(name='output', get_cmd='SOUT?',
                            set_cmd='SOUT {}',
                            set_parser=parse_inp_bool,
