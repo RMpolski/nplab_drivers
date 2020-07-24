@@ -183,3 +183,6 @@ def stick_setup_instrs(instr_str):
     if instr_str == 'srdc':
         srdc = SRDC205('srdc', 'COM3')
         builtins.srdc = srdc
+    if instr_str == 'k2200':
+        k2200 = Keithley_2200('k2200', 'GPIB0::22::INSTR')
+        builtins.k2200 = k2200
