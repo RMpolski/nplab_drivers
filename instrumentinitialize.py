@@ -10,6 +10,7 @@ from qcodes.instrument_drivers.nplab_drivers.LR_700 import LR_700
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
 from qcodes.instrument_drivers.nplab_drivers.SIM900 import SIM900
+from qcodes.instrument_drivers.nplab_drivers.SIM900_rs232 import SIM900_rs232
 from qcodes.instrument_drivers.stanford_research.SR830 import SR830
 from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
@@ -178,8 +179,11 @@ def stick_setup_instrs(instr_str):
         lakeshore = Lakeshore211('lakeshore', 'COM5')
         builtins.lakeshore = lakeshore
     if instr_str == 'lockin830':
-        lockin830 = SR830('lockin830', 'GPIB0::8::INSTR')
+        lockin830 = SR830('lockin830', 'GPIB0::10::INSTR') #rosenbaum lockin
         builtins.lockin830 = lockin830
     if instr_str == 'srdc':
         srdc = SRDC205('srdc', 'COM3')
         builtins.srdc = srdc
+    if instr_str == 'srframe':
+        srframe = SIM900_rs232('srframe', 'COM1')  # 'COM1' is the DB9 port on the back of the computer.
+        builtins.srframe = srframe

@@ -7,6 +7,7 @@ from qcodes.instrument_drivers.nplab_drivers.Keithley_2182a import Keithley_2182
 from qcodes.instrument_drivers.nplab_drivers.Keithley_2200 import Keithley_2200
 from qcodes.instrument_drivers.nplab_drivers.LR_700 import LR_700
 from qcodes.instrument_drivers.nplab_drivers.SIM900 import SIM900
+from qcodes.instrument_drivers.nplab_drivers.SIM900_rs232 import SIM900_rs232
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
 from qcodes.instrument_drivers.stanford_research.SR830 import SR830
