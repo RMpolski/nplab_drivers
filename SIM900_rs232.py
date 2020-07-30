@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Friday April 26, 2019
+Created on Wednesday, July 29, 2020
 
 @author: robertpolski
+
+Basically a copy of the SIM900 driver but with added commands to connect to a serial connection
+and, for now, just an isolated voltage source in port 1 and nothing in the other 2 ports
 """
 
 import numpy as np
