@@ -187,3 +187,6 @@ def stick_setup_instrs(instr_str):
     if instr_str == 'srframe':
         srframe = SIM900_rs232('srframe', 'COM1')  # 'COM1' is the DB9 port on the back of the computer.
         builtins.srframe = srframe
+    if instr_str == 'k2200':
+        k2200 = Keithley_2200('k2200', 'GPIB0::22::INSTR')
+        builtins.k2200 = k2200
