@@ -206,7 +206,7 @@ class Triton(IPInstrument):
                            unit='uW',
                            get_cmd='READ:DEV:H1:HTR:SIG:POWR',
                            set_cmd='SET:DEV:H1:HTR:SIG:POWR:{}',
-                           get_parser=_parse_htr,
+                           get_parser=self._parse_htr,
                            set_parser=float,
                            vals=Numbers(0, 300000))
 
@@ -215,7 +215,7 @@ class Triton(IPInstrument):
                            unit='uW',
                            get_cmd='READ:DEV:H2:HTR:SIG:POWR',
                            set_cmd='SET:DEV:H2:HTR:SIG:POWR:{}',
-                           get_parser=_parse_htr,
+                           get_parser=self._parse_htr,
                            set_parser=float,
                            vals=Numbers(0, 300000))
 
