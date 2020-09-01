@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wednesday, July 29, 2020
+Created on Friday April 26, 2019
 
 @author: robertpolski
-
-Basically a copy of the SIM900 driver but with added commands to connect to a serial connection
-and, for now, just an isolated voltage source in port 1 and nothing in the other 2 ports
 """
 
 import numpy as np
 from typing import Union
 
-from qcodes import Instrument
+from qcodes import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter, MultiParameter
 import qcodes.utils.validators as vals
 import time
 from functools import partial
-import serial
-from qcodes.utils.helpers import strip_attrs
 
 
 def parse_bool(value):
@@ -54,14 +49,14 @@ def parse_bool(value):
 boolcheck = (0, 1, 'on', 'off', 'ON', 'OFF', False, True)
 
 
-class SIM900_rs232(Instrument):
+class SIM900_stick(VisaInstrument):
     """
     Instrument Driver for the SRS Frame SIM900. Configure this class if you
     change the instruments and their port orders in the rack. Note that you
     must reset or write the escape string if you connect to any single port
     (using "CONN p,'escapestring'")
     """
-    def __init__(self, name: str, address: str, timeout=8, **kwargs):
+    def __init__(self, name: str, address: str, reset: bool=False, **kwargs):
         """
         Args:
             name: Name to use internally in QCoDeS
@@ -69,11 +64,7 @@ class SIM900_rs232(Instrument):
             reset: Reset SIM900, reset voltage sources (set to zero and output
                off)
         """
-        super().__init__(name, **kwargs)
-
-        self.address = address
-        self.terminator = '\n'
-        self._open_serial_connection(timeout)
+        super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter('volt_p1', label='Port 1 Voltage', unit='V',
                            set_cmd=partial(self.setvolt, 1, 'VOLT'),
@@ -81,11 +72,11 @@ class SIM900_rs232(Instrument):
                            get_parser=float,
                            vals=vals.Numbers(-20, 20))
 
-        # self.add_parameter('volt_p5', label='Port 5 Voltage', unit='V',
-        #                    set_cmd=partial(self.setvolt, 5, 'VOLT'),
-        #                    get_cmd=partial(self.get_from_port, 5, 'VOLT?'),
-        #                    get_parser=float,
-        #                    vals=vals.Numbers(-20, 20))
+        self.add_parameter('volt_p2', label='Port 2 Voltage', unit='V',
+                           set_cmd=partial(self.setvolt, 2, 'VOLT'),
+                           get_cmd=partial(self.get_from_port, 2, 'VOLT?'),
+                           get_parser=float,
+                           vals=vals.Numbers(-20, 20))
 
         self.add_parameter('output_p1',
                            set_cmd=partial(self.write_to_port, 1, 'EXON'),
@@ -94,12 +85,12 @@ class SIM900_rs232(Instrument):
                            get_parser=int,
                            vals=vals.Enum(*boolcheck))
 
-        # self.add_parameter('output_p5',
-        #                    set_cmd=partial(self.write_to_port, 5, 'EXON'),
-        #                    get_cmd=partial(self.get_from_port, 5, 'EXON?'),
-        #                    set_parser=parse_bool,
-        #                    get_parser=int,
-        #                    vals=vals.Enum(*boolcheck))
+        self.add_parameter('output_p2',
+                           set_cmd=partial(self.write_to_port, 2, 'EXON'),
+                           get_cmd=partial(self.get_from_port, 2, 'EXON?'),
+                           set_parser=parse_bool,
+                           get_parser=int,
+                           vals=vals.Enum(*boolcheck))
                            
         # self.sum_port = 8
         
@@ -112,7 +103,7 @@ class SIM900_rs232(Instrument):
         #                        get_parser=int,
         #                        vals=vals.Enum(0, 1, -1, 'off', 'OFF', False, 'invert', 'INVERT'))
         
-        ## this parameter doesn't work too well yet...
+        # ## this parameter doesn't work too well yet...
         # self.add_parameter('sum_read',
         #                    get_cmd=self._sum_volt_read,
         #                    get_parser=float)
@@ -121,62 +112,32 @@ class SIM900_rs232(Instrument):
         
         self.write('FLSH 1')
         time.sleep(0.05)
-        # self.write('FLSH 5')
-        # time.sleep(0.05)
+        self.write('FLSH 2')
+        time.sleep(0.05)
         # self.write('FLSH 8')
         # time.sleep(0.05)
         self.write_to_port(1, 'TERM', 2)
         time.sleep(0.05)
-        # self.write_to_port(5, 'TERM', 2)
-        # time.sleep(0.05)
+        self.write_to_port(5, 'TERM', 2)
+        time.sleep(0.05)
         # self.write_to_port(8, 'TERM', 2)
         # time.sleep(0.05)
         
         # self.sum_read_averageT = 1000
-        # if reset:
-        #     self.reset()
+        if reset:
+            self.reset()
 
         time.sleep(0.25)
         self.connect_message()
 
-    def _open_serial_connection(self, timeout=None):
-        if timeout is None:
-            ser = serial.Serial(self.address, 9600, rtscts=True)
-        else:
-            ser = serial.Serial(self.address, 9600, timeout=timeout, rtscts=True)
-        if not (ser.isOpen()):
-            ser.open()
-        self._ser = ser
-
-    def close(self):
-        """Irreversibly stop this instrument and free its resources.
-        Closes the serial connection too"""
-        if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
-            self.connection.close()
-        ser = self._ser
-        ser.close()
-
-        strip_attrs(self, whitelist=['name'])
-        self.remove_instance(self)
 
     def reset(self):
         self.write_to_port(1, '*RST', '')
         time.sleep(0.05)
-        # self.write_to_port(5, '*RST', '')
-        # time.sleep(0.05)
-        self._ser.write('*RST'+self.terminator)
+        self.write_to_port(2, '*RST', '')
         time.sleep(0.05)
-
-    def ask_raw(self, cmd):
-        cmd += self.terminator
-        self._ser.write(cmd.encode('utf-8'))
-        time.sleep(0.1)
-        ans = self._ser.readline().decode('utf-8').strip()
-        return ans
-
-    def write_raw(self, cmd):
-        cmd += self.terminator
-        self._ser.write(cmd.encode('utf-8'))
+        self.write('*RST')
+        time.sleep(0.05)
 
     def write_to_port(self, port, message, val):
         sendmess = message + ' {}'.format(val)
@@ -191,7 +152,6 @@ class SIM900_rs232(Instrument):
         self.write(s)
         time.sleep(0.1)
         ans = self.ask('GETN? {},20'.format(int(port)))[5:]
-        _ = self._ser.readline()
         time.sleep(0.05)
         return ans
 

@@ -10,6 +10,7 @@ from qcodes.instrument_drivers.nplab_drivers.LR_700 import LR_700
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
 from qcodes.instrument_drivers.nplab_drivers.SIM900 import SIM900
+from qcodes.instrument_drivers.nplab_drivers.SIM900_stick import SIM900_stick
 from qcodes.instrument_drivers.nplab_drivers.SIM900_rs232 import SIM900_rs232
 from qcodes.instrument_drivers.stanford_research.SR830 import SR830
 from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
@@ -176,16 +177,19 @@ def triton_instrs(instr_str):
 
 def stick_setup_instrs(instr_str):
     if instr_str == 'lakeshore':
-        lakeshore = Lakeshore211('lakeshore', 'COM5')
+        lakeshore = Lakeshore211('lakeshore', 'COM5')  # second from the top usb port on the dongle
         builtins.lakeshore = lakeshore
     if instr_str == 'lockin830':
         lockin830 = SR830('lockin830', 'GPIB0::10::INSTR') #rosenbaum lockin
         builtins.lockin830 = lockin830
+    if instr_str == 'lockinrefurb':
+        lockinrefurb = SR830('lockinrefurb', 'GPIB0::8::INSTR') #rosenbaum lockin
+        builtins.lockinrefurb = lockinrefurb
     if instr_str == 'srdc':
-        srdc = SRDC205('srdc', 'COM3')
+        srdc = SRDC205('srdc', 'COM3')  # second from bottom usb port on the dongle
         builtins.srdc = srdc
     if instr_str == 'srframe':
-        srframe = SIM900_rs232('srframe', 'COM1')  # 'COM1' is the DB9 port on the back of the computer.
+        srframe = SIM900_stick('srframe', 'GPIB0::2::INSTR')  # 'COM1' is the DB9 port on the back of the computer. #COM6 is the upper USB port on the multi-port box
         builtins.srframe = srframe
     if instr_str == 'k2200':
         k2200 = Keithley_2200('k2200', 'GPIB0::22::INSTR')

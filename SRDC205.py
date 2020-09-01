@@ -80,36 +80,6 @@ class SRDC205(Instrument):
         strip_attrs(self, whitelist=['name'])
         self.remove_instance(self)
 
-    def get_idn(self):
-        """ The idn for this instrument also comes from the *IDN command, but
-        it needs a \n endline character, and it only returns the instrument
-        name"""
-        idstr = ''  # in case self.ask fails
-        try:
-            self._ser.write('*IDN?\n'.encode('utf-8'))
-            idstr = self._ser.readline().decode('utf-8').strip()
-            # form is supposed to be comma-separated, but we've seen
-            # other separators occasionally
-            idparts: List[Optional[str]]
-            for separator in ',;:':
-                # split into no more than 4 parts, so we don't lose info
-                idparts = [p.strip() for p in idstr.split(separator, 3)]
-                if len(idparts) > 1:
-                    break
-            # in case parts at the end are missing, fill in None
-            if len(idparts) < 4:
-                idparts += [None] * (4 - len(idparts))
-        except:
-            self.log.debug('Error getting or interpreting *IDN?: '
-                           + repr(idstr))
-            idparts = [None, self.name, None, None]
-
-        # some strings include the word 'model' at the front of model
-        if str(idparts[1]).lower().startswith('model'):
-            idparts[1] = str(idparts[1])[5:].strip()
-
-        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
-
     def ask_raw(self, cmd):
         cmd += self.terminator
         self._ser.write(cmd.encode('utf-8'))
