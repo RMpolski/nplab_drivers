@@ -180,11 +180,11 @@ def stick_setup_instrs(instr_str):
         lakeshore = Lakeshore211('lakeshore', 'COM5')  # second from the top usb port on the dongle
         builtins.lakeshore = lakeshore
     if instr_str == 'lockin830':
-        lockin830 = SR830('lockin830', 'GPIB0::10::INSTR') #rosenbaum lockin
+        lockin830 = SR830('lockin830', 'GPIB0::8::INSTR') #refurbished lockin
         builtins.lockin830 = lockin830
-    if instr_str == 'lockinrefurb':
-        lockinrefurb = SR830('lockinrefurb', 'GPIB0::8::INSTR') #rosenbaum lockin
-        builtins.lockinrefurb = lockinrefurb
+    # if instr_str == 'lockinrefurb':
+    #     lockinrefurb = SR830('lockinrefurb', 'GPIB0::8::INSTR')
+    #     builtins.lockinrefurb = lockinrefurb
     if instr_str == 'srdc':
         srdc = SRDC205('srdc', 'COM3')  # second from bottom usb port on the dongle
         builtins.srdc = srdc
