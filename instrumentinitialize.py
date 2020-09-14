@@ -159,6 +159,9 @@ def triton_instrs(instr_str):
     elif instr_str == 'lockin830':
         lockin830 = SR830('lockin830', 'GPIB0::8::INSTR')
         builtins.lockin830 = lockin830
+    elif instr_str == 'lockin830_2':
+        lockin830_2 = SR830('lockin830_2', 'GPIB0::3::INSTR')
+        builtins.lockin830_2 = lockin830_2
     elif instr_str == 'lockin865':
         lockin865 = SR865A('lockin865', 'GPIB0::4::INSTR')
         builtins.lockin865 = lockin865

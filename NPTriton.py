@@ -450,7 +450,7 @@ class Triton(IPInstrument):
                    ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']')
         self.write('SET:SYS:VRM:ACTN:RTOS')
         # just to give an time estimate, +10s for overhead
-        t_wait = self.magnet_sweep_time() * 60 + 10
+        # t_wait = self.magnet_sweep_time() * 60 + 10
         # print('Please wait ' + str(t_wait) + ' seconds for the field sweep, ' +
         #       'plus the time required for operating the switch...')
         while self.magnet_status() != 'IDLE':
@@ -504,7 +504,7 @@ class Triton(IPInstrument):
                    ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']')
         self.write('SET:SYS:VRM:ACTN:RTOS')
         # just to give an time estimate, +10s for overhead
-        t_wait = self.magnet_sweep_time() * 60 + 10
+        # t_wait = self.magnet_sweep_time() * 60 + 10
         # print('Sweep time approximately ' + str(t_wait) + ' seconds')
         return
 
@@ -615,31 +615,31 @@ class Triton(IPInstrument):
 
     def fullcooldown(self):
         "Starts the full cooldown automation"
-        triton.write('SET:SYS:DR:ACTN:CLDN')
+        self.write('SET:SYS:DR:ACTN:CLDN')
 
     def condense(self):
         "Starts condensing (use only if < about 15K)"
-        triton.write('SET:SYS:DR:ACTN:COND')
+        self.write('SET:SYS:DR:ACTN:COND')
 
     def mixture_collect(self):
         "Starts collecting the mixture into the tank"
-        triton.write('SET:SYS:DR:ACTN:COLL')
+        self.write('SET:SYS:DR:ACTN:COLL')
 
     def precool(self):
         "Starts a pre-cool (doesn't continue to the next step automatically)"
-        triton.write('SET:SYS:DR:ACTN:PCL')
+        self.write('SET:SYS:DR:ACTN:PCL')
 
     def pause_precool(self):
         "Pauses the pre-cool automation"
-        triton.write('SET:SYS:DR:ACTN:PCOND')
+        self.write('SET:SYS:DR:ACTN:PCOND')
 
     def resume_precool(self):
         "Resumes the pre-cool automation"
-        triton.write('SET:SYS:DR:ACTN:RCOND')
+        self.write('SET:SYS:DR:ACTN:RCOND')
 
     def stopcool(self):
         "Stops any running automation"
-        triton.write('SET:SYS:ACTN:STOP')
+        self.write('SET:SYS:ACTN:STOP')
 
     def _parse_action(self, msg):
         """ Parse message and return action as a string
