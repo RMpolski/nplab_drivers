@@ -130,7 +130,7 @@ def ppms_instrs(instr_str):
         vdp = vdpArduino('vdp', 'COM10', timeout=6)
         builtins.vdp = vdp
     elif instr_str == 'srdc':
-        srdc = SRDC205('srdc', 'COM5')
+        srdc = SRDC205('srdc', 'COM3')
         builtins.srdc = srdc
 
 
@@ -142,7 +142,7 @@ def triton_instrs(instr_str):
         k6 = Keithley_6221('k6', 'GPIB::12::INSTR')
         builtins.k6 = k6
     elif instr_str == 'k2182':
-        k2182 = Keithley_2182a('k2182', 'GPIB::7::INSTR')
+        k2182 = Keithley_2182a('k2182', 'GPIB::13::INSTR')
         builtins.k2182 = k2182
     elif instr_str == 'k2015':
         k2015 = Keithley_2000('k2015', 'GPIB::1::INSTR')
@@ -162,6 +162,9 @@ def triton_instrs(instr_str):
     elif instr_str == 'lockin830_2':
         lockin830_2 = SR830('lockin830_2', 'GPIB0::3::INSTR')
         builtins.lockin830_2 = lockin830_2
+    elif instr_str == 'lockin830_3':
+        lockin830_3 = SR830('lockin830_3', 'GPIB0::7::INSTR')
+        builtins.lockin830_3 = lockin830_3
     elif instr_str == 'lockin865':
         lockin865 = SR865A('lockin865', 'GPIB0::4::INSTR')
         builtins.lockin865 = lockin865

@@ -14,3 +14,6 @@ tmp/
 # Data files
 .data
 .ipynb_checkpoints
+
+# Other
+*backup.py

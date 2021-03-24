@@ -78,6 +78,12 @@ class SIM900(VisaInstrument):
                            get_parser=float,
                            vals=vals.Numbers(-20, 20))
 
+        self.add_parameter('volt_p7', label='Port 7 Voltage', unit='V',
+                           set_cmd=partial(self.setvolt, 7, 'VOLT'),
+                           get_cmd=partial(self.get_from_port, 7, 'VOLT?'),
+                           get_parser=float,
+                           vals=vals.Numbers(-20, 20))
+
         self.add_parameter('output_p1',
                            set_cmd=partial(self.write_to_port, 1, 'EXON'),
                            get_cmd=partial(self.get_from_port, 1, 'EXON?'),
@@ -88,6 +94,13 @@ class SIM900(VisaInstrument):
         self.add_parameter('output_p5',
                            set_cmd=partial(self.write_to_port, 5, 'EXON'),
                            get_cmd=partial(self.get_from_port, 5, 'EXON?'),
+                           set_parser=parse_bool,
+                           get_parser=int,
+                           vals=vals.Enum(*boolcheck))
+
+        self.add_parameter('output_p7',
+                           set_cmd=partial(self.write_to_port, 7, 'EXON'),
+                           get_cmd=partial(self.get_from_port, 7, 'EXON?'),
                            set_parser=parse_bool,
                            get_parser=int,
                            vals=vals.Enum(*boolcheck))
@@ -114,11 +127,15 @@ class SIM900(VisaInstrument):
         time.sleep(0.05)
         self.write('FLSH 5')
         time.sleep(0.05)
+        self.write('FLSH 7')
+        time.sleep(0.05)
         self.write('FLSH 8')
         time.sleep(0.05)
         self.write_to_port(1, 'TERM', 2)
         time.sleep(0.05)
         self.write_to_port(5, 'TERM', 2)
+        time.sleep(0.05)
+        self.write_to_port(7, 'TERM', 2)
         time.sleep(0.05)
         self.write_to_port(8, 'TERM', 2)
         time.sleep(0.05)
@@ -135,6 +152,8 @@ class SIM900(VisaInstrument):
         self.write_to_port(1, '*RST', '')
         time.sleep(0.05)
         self.write_to_port(5, '*RST', '')
+        time.sleep(0.05)
+        self.write_to_port(7, '*RST', '')
         time.sleep(0.05)
         self.write('*RST')
         time.sleep(0.05)
@@ -160,7 +179,7 @@ class SIM900(VisaInstrument):
         
     def parse_sum_chan(self, value):
         if type(value) is str:
-            value = str.lower()
+            value = value.lower()
         elif type(value) is float:
             value = int(value)
         
