@@ -3,9 +3,53 @@ Some drivers in development for the Nadj-Perge Group at Caltech.
 To be used along with the QCoDes environment, which you can clone (you can clone it to anywhere you want on your computer):
 https://github.com/QCoDeS/Qcodes.git
 
-Follow the instructions here to install (based on GitHub, which is more up to date): https://qcodes.github.io/Qcodes/start/index.html
+Instructions on installation: (based on here, with a few changes and clarifications https://qcodes.github.io/Qcodes/start/index.html)
 
-Clone this (nplab_drivers) repository into the instrument_drivers folder where QCoDeS is installed in your working python distribution. Ex: <path_to>/qcodes/qcodes/instrument_drivers
+First delete the environment.yml folder in the cloned Qcodes repository (top-level folder), and replace it with the environment.yml file in this nplab_drivers repository (download this file separately and do a copy/paste). This allows the live plotting through pyqtgraph to work well by maintaining the old versions of a few packages.
+
+Use a prompt to enter the first folder of the cloned Qcodes repository folder. Then make an environment:
+
+'conda env create -f environment.yml'
+
+Enter the qcodes environment:
+
+'conda activate qcodes'
+
+Then install qcodes as a package into this environment from file with
+
+'pip install -e .'
+
+(where the period at the end refers to the current directory).
+
+Clone this (nplab_drivers) repository into the instrument_drivers folder (<path_to>/qcodes/qcodes/instrument_drivers):
+
+'cd qcodes/instrument_drivers'
+'git clone https://github.com/RMpolski/nplab_drivers.git'
+
+Then go back and install qcodes again from the top-level folder (this ties up loose ends and allows you to import qcodes.instrument_drivers.nplab_drivers):
+
+'cd ../..'
+'pip install -e .'
+
+Lastly, in order to use the plotting style we use, it requires a tweak in the config file. Find the 'Qcodes/qcodes/configuration/qcodesrc.json', or '.../config/qcodesrc.json' file, and change one line. Change it from:
+
+'"gui" :{
+        "notebook": true,
+        "plotlib": null,
+        "pyqtmaxplots": 100,
+        "defaultcolormap": "hot"
+    },'
+    
+ to 
+ 
+ '"gui" :{
+        "notebook": true,
+        "plotlib": "all",
+        "pyqtmaxplots": 100,
+        "defaultcolormap": "hot"
+    },'
+    
+ Be careful of the syntax, add the quotation marks, and only change that one thing. Now live plotting with pyqtgraph should work well.
 
 ## Note for using drivers:
 The instructions here assume you have installed python through anaconda and made an environment called qcodes (as specified in the QCodes installation instructions).
