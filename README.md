@@ -6,7 +6,7 @@ To be used along with the QCoDes setup, which you can clone (you can clone it to
 
 Instructions on installation: (based on here, with a few changes and clarifications https://qcodes.github.io/Qcodes/start/index.html, although now it's quite a bit different)
 
-First delete the environment.yml folder in the cloned Qcodes repository (top-level folder), and replace it with the environment.yml file in this nplab_drivers repository (download this file separately and do a copy/paste). This allows the live plotting through pyqtgraph to work well by maintaining the old versions of a few packages, and it adds the pyserial package.
+First delete the environment.yml folder in the cloned Qcodes repository (if using the cloned one), and replace it with the environment.yml file in this nplab_drivers repository (download this file separately and do a copy/paste). This allows the live plotting through pyqtgraph to work well by maintaining the old versions of a few packages, and it adds the pyserial package.
 
 (Note, the newest version of qcodes with python 3.8 has some breaking changes, if you still want to use pyqtgraph=0.10.0 and python=3.6.8. I need to test it to see if pyqtgraph works with the new set of packages. Until then, this will only work if you copy over the Qcodes folder from one of our computers.)
 
