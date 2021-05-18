@@ -5,7 +5,7 @@ https://github.com/QCoDeS/Qcodes.git
 
 Instructions on installation: (based on here, with a few changes and clarifications https://qcodes.github.io/Qcodes/start/index.html)
 
-First delete the environment.yml folder in the cloned Qcodes repository (top-level folder), and replace it with the environment.yml file in this nplab_drivers repository (download this file separately and do a copy/paste). This allows the live plotting through pyqtgraph to work well by maintaining the old versions of a few packages.
+First delete the environment.yml folder in the cloned Qcodes repository (top-level folder), and replace it with the environment.yml file in this nplab_drivers repository (download this file separately and do a copy/paste). This allows the live plotting through pyqtgraph to work well by maintaining the old versions of a few packages, and it adds the pyserial package.
 
 Use a prompt to enter the first folder of the cloned Qcodes repository folder. Then make an environment:
 
@@ -62,7 +62,7 @@ Lastly, in order to use the plotting style we use, it requires a tweak in the co
 ## Note for using drivers:
 The instructions here assume you have installed python through anaconda and made an environment called qcodes (as specified in the QCodes installation instructions).
 
-The ppms instrument driver (QD) requires you to install the packages pywin32 (`conda install pywin32`) to the qcodes environment, since the MultiVu program on windows, and the OpenDACs drivers and van-der-Pauw setup require the package pyserial (`conda install pyserial`), since they use a serial connection to Arduinos (but they also work on Macs). Find the GPIB addresses for the Keithleys in the NI MAX software, and find the Arduino addresses through the Arduino program (on Mac it will look like /dev/cu.*******, and on Windows a mores simple 'COM3' or with some other number). QD only requires the MultiVu software and no address.
+The ppms instrument driver (QD) requires you to install the packages pywin32 (`conda install pywin32`) to the qcodes environment, since the MultiVu program on windows. Find the GPIB addresses for the Keithleys in the NI MAX software, and find the Arduino addresses through the Arduino program (on Mac it will look like /dev/cu.*******, and on Windows a mores simple 'COM3' or with some other number). QD only requires the MultiVu software and no address.
 
 
 ## Useful functions and parameters
