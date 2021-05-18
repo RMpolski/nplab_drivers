@@ -6,9 +6,7 @@ To be used along with the QCoDes setup, which you can clone (you can clone it to
 
 Instructions on installation: (based on here, with a few changes and clarifications https://qcodes.github.io/Qcodes/start/index.html, although now it's quite a bit different)
 
-First delete the environment.yml folder in the cloned Qcodes repository (if using the cloned one), and replace it with the environment.yml file in this nplab_drivers repository (download this file separately and do a copy/paste). This allows the live plotting through pyqtgraph to work well by maintaining the old versions of a few packages, and it adds the pyserial package.
-
-(Note, the newest version of qcodes with python 3.8 has some breaking changes, if you still want to use pyqtgraph=0.10.0 and python=3.6.8. I need to test it to see if pyqtgraph works with the new set of packages. Until then, this will only work if you copy over the Qcodes folder from one of our computers.)
+(Note, the newest versions of qcodes with python 3.7+ has some breaking changes, if you still want to use pyqtgraph=0.10.0 and python=3.6.8. I need to test it to see if pyqtgraph works with the new set of packages. Until then, this will only work if you copy over the Qcodes folder from one of our computers (the one with python 3.6.8).)
 
 Use a prompt to enter the first folder of the cloned Qcodes repository folder. Then make an environment:
 
@@ -61,6 +59,8 @@ Lastly, in order to use the plotting style we use, it requires a tweak in the co
  ```
     
  Be careful of the syntax, add the quotation marks, and only change `null` to `"all"`. Now live plotting with pyqtgraph should work well.
+ 
+ Brief note: If you want to try the newest version, clone the Qcodes GitHub repo, clone this nplab_drivers repo into the instrument_drivers folder, use `conda create -n qcodes python=3.8` to create the environment, then use `conda install pyserial` and `conda install pywin32` (pywin32 only if using Windows). Then use `pip install -e .` while in the top-level qcodes directory to install the qcodes package from file. Then you need to change the Qcodes/qcodes/configuration/qcodesrc.json file from `"plotlib": null,` to `"plotlib": "all",` AND change (near the top of the page) `"import_legacy_api": false,` to `"import_legacy_api": true,`. This should work, and the python version is more updated, but I haven't tested out the pyqtgraph plots on Windows yet.
 
 ## Note for using drivers:
 The instructions here assume you have installed python through anaconda and made an environment called qcodes (as specified in the QCodes installation instructions).
