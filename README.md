@@ -57,7 +57,7 @@ Lastly, in order to use the plotting style we use, it requires a tweak in the co
     },
  ```
     
- Be careful of the syntax, add the quotation marks, and only change that one thing. Now live plotting with pyqtgraph should work well.
+ Be careful of the syntax, add the quotation marks, and only change `null` to `"all"`. Now live plotting with pyqtgraph should work well.
 
 ## Note for using drivers:
 The instructions here assume you have installed python through anaconda and made an environment called qcodes (as specified in the QCodes installation instructions).
