@@ -6,7 +6,7 @@ To be used along with the QCoDes setup, which you can clone (you can clone it to
 
 Instructions on installation: (based on here, with a few changes and clarifications https://qcodes.github.io/Qcodes/start/index.html, although now it's quite a bit different)
 
-(Note, the newest versions of qcodes with python 3.7+ has some breaking changes, if you still want to use pyqtgraph=0.10.0 and python=3.6.8. I need to test it to see if pyqtgraph works with the new set of packages. Until then, this will only work if you copy over the Qcodes folder from one of our computers (the one with python <=3.6.8).)
+(Note, the newest versions of qcodes with python 3.7+ occasionally has some breaking changes, if you still want to use the legacy version. Legacy works well and is installed on the lab computers with pyqtgraph=0.10.0 and python=3.6.8. There is a note below on installing Python 3.8 and Qcodes through a github clone, but perhaps the most stable way is if you copy over the Qcodes folder from one of our computers (the one with python <=3.6.8).)
 
 Use a prompt to enter the first folder of the cloned Qcodes repository folder. Then make an environment:
 
