@@ -4,7 +4,7 @@ from typing import Union
 from qcodes import VisaInstrument
 import logging
 
-import visa
+import pyvisa as visa
 import pyvisa.constants as vi_const
 import pyvisa.resources
 
