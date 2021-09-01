@@ -246,6 +246,92 @@ def Rxxfromdata(dset, current, instrument='lockin865', Rswitchohms=50000):
 
     return X
 
+class RapidTwoSlopeNorm(Normalize):
+    def __init__(self, vcenter, P25=0.5, P75=0.5, vmin=None, vmax=None):
+        """
+        Normalize data with a set center.
+
+        Useful when mapping data with an unequal rates of change around a
+        conceptual center, e.g., data that range from -2 to 4, with 0 as
+        the midpoint.
+
+        Parameters
+        ----------
+        vcenter : float
+            The data value that defines ``0.5`` in the normalization.
+        P25 : float, optional
+            See P75 below, but this one is for below the 0.5 point. These two
+            parameters basically just add another two points to the
+            interpolation at 0.25 and 0.75. Lower means more sqeezed near
+            the vcenter point.
+        P75 : float, optional
+            Squeezes or expands the data near small values about the 0.5 point.
+            The percent distance from between the 0.5 point and 1.0 point
+            where the unmodified 0.75 point now sits. (make lower to squeeze).
+            Defaults to the unmodified value of 0.5
+        vmin : float, optional
+            The data value that defines ``0.0`` in the normalization.
+            Defaults to the min value of the dataset.
+        vmax : float, optional
+            The data value that defines ``1.0`` in the normalization.
+            Defaults to the the max value of the dataset.
+
+        Examples
+        --------
+        This maps data value -4000 to 0., 0 to 0.5, and +10000 to 1.0; data
+        between is linearly interpolated::
+
+            >>> import matplotlib.colors as mcolors
+            >>> offset = mcolors.TwoSlopeNorm(vmin=-4000.,
+                                              vcenter=0., vmax=10000)
+            >>> data = [-4000., -2000., 0., 2500., 5000., 7500., 10000.]
+            >>> offset(data)
+            array([0., 0.25, 0.5, 0.625, 0.75, 0.875, 1.0])
+        """
+
+        self.vcenter = vcenter
+        self.P25 = P25
+        self.P75 = P75
+        self.vmin = vmin
+        self.vmax = vmax
+        if vcenter is not None and vmax is not None and vcenter >= vmax:
+            raise ValueError('vmin, vcenter, and vmax must be in '
+                             'ascending order')
+        if vcenter is not None and vmin is not None and vcenter <= vmin:
+            raise ValueError('vmin, vcenter, and vmax must be in '
+                             'ascending order')
+        if P25 <= 0 or P25 >= 1:
+            raise ValueError('P25 must be between 0 and 1')
+        if P75 <= 0 or P75 >= 1:
+            raise ValueError('P75 must be between 0 and 1')
+
+    def autoscale_None(self, A):
+        """
+        Get vmin and vmax, and then clip at vcenter
+        """
+        super().autoscale_None(A)
+        if self.vmin > self.vcenter:
+            self.vmin = self.vcenter
+        if self.vmax < self.vcenter:
+            self.vmax = self.vcenter
+
+    def __call__(self, value, clip=None):
+        """
+        Map value to the interval [0, 1]. The clip argument is unused.
+        """
+        result, is_scalar = self.process_value(value)
+        self.autoscale_None(result)  # sets self.vmin, self.vmax if None
+
+        if not self.vmin <= self.vcenter <= self.vmax:
+            raise ValueError("vmin, vcenter, vmax must increase monotonically")
+        result = np.ma.masked_array(
+            np.interp(result, [self.vmin, self.vcenter - (self.vcenter - self.vmin)*self.P25, self.vcenter, self.vcenter + (self.vmax - self.vcenter)*self.P75, self.vmax],
+                      [0, 0.25, 0.5, 0.75, 1.]), mask=np.ma.getmask(result))
+        if is_scalar:
+            result = np.atleast_1d(result)[0]
+        return result
+        
+
 class DivLogNorm(Normalize):
     """Normalize a given value to the 0-1 range on a log scale. The first
     arg (centerpct) is the centerpoint of the diverging colors (between 0
