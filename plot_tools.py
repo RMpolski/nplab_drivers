@@ -246,6 +246,92 @@ def Rxxfromdata(dset, current, instrument='lockin865', Rswitchohms=50000):
 
     return X
 
+class RapidTwoSlopeNorm(Normalize):
+    def __init__(self, vcenter, P25=0.5, P75=0.5, vmin=None, vmax=None):
+        """
+        Normalize data with a set center.
+
+        Useful when mapping data with an unequal rates of change around a
+        conceptual center, e.g., data that range from -2 to 4, with 0 as
+        the midpoint.
+
+        Parameters
+        ----------
+        vcenter : float
+            The data value that defines ``0.5`` in the normalization.
+        P25 : float, optional
+            See P75 below, but this one is for below the 0.5 point. These two
+            parameters basically just add another two points to the
+            interpolation at 0.25 and 0.75. Lower means more sqeezed near
+            the vcenter point.
+        P75 : float, optional
+            Squeezes or expands the data near small values about the 0.5 point.
+            The percent distance from between the 0.5 point and 1.0 point
+            where the unmodified 0.75 point now sits. (make lower to squeeze).
+            Defaults to the unmodified value of 0.5
+        vmin : float, optional
+            The data value that defines ``0.0`` in the normalization.
+            Defaults to the min value of the dataset.
+        vmax : float, optional
+            The data value that defines ``1.0`` in the normalization.
+            Defaults to the the max value of the dataset.
+
+        Examples
+        --------
+        This maps data value -4000 to 0., 0 to 0.5, and +10000 to 1.0; data
+        between is linearly interpolated::
+
+            >>> import matplotlib.colors as mcolors
+            >>> offset = mcolors.TwoSlopeNorm(vmin=-4000.,
+                                              vcenter=0., vmax=10000)
+            >>> data = [-4000., -2000., 0., 2500., 5000., 7500., 10000.]
+            >>> offset(data)
+            array([0., 0.25, 0.5, 0.625, 0.75, 0.875, 1.0])
+        """
+
+        self.vcenter = vcenter
+        self.P25 = P25
+        self.P75 = P75
+        self.vmin = vmin
+        self.vmax = vmax
+        if vcenter is not None and vmax is not None and vcenter >= vmax:
+            raise ValueError('vmin, vcenter, and vmax must be in '
+                             'ascending order')
+        if vcenter is not None and vmin is not None and vcenter <= vmin:
+            raise ValueError('vmin, vcenter, and vmax must be in '
+                             'ascending order')
+        if P25 <= 0 or P25 >= 1:
+            raise ValueError('P25 must be between 0 and 1')
+        if P75 <= 0 or P75 >= 1:
+            raise ValueError('P75 must be between 0 and 1')
+
+    def autoscale_None(self, A):
+        """
+        Get vmin and vmax, and then clip at vcenter
+        """
+        super().autoscale_None(A)
+        if self.vmin > self.vcenter:
+            self.vmin = self.vcenter
+        if self.vmax < self.vcenter:
+            self.vmax = self.vcenter
+
+    def __call__(self, value, clip=None):
+        """
+        Map value to the interval [0, 1]. The clip argument is unused.
+        """
+        result, is_scalar = self.process_value(value)
+        self.autoscale_None(result)  # sets self.vmin, self.vmax if None
+
+        if not self.vmin <= self.vcenter <= self.vmax:
+            raise ValueError("vmin, vcenter, vmax must increase monotonically")
+        result = np.ma.masked_array(
+            np.interp(result, [self.vmin, self.vcenter - (self.vcenter - self.vmin)*self.P25, self.vcenter, self.vcenter + (self.vmax - self.vcenter)*self.P75, self.vmax],
+                      [0, 0.25, 0.5, 0.75, 1.]), mask=np.ma.getmask(result))
+        if is_scalar:
+            result = np.atleast_1d(result)[0]
+        return result
+        
+
 class DivLogNorm(Normalize):
     """Normalize a given value to the 0-1 range on a log scale. The first
     arg (centerpct) is the centerpoint of the diverging colors (between 0
@@ -313,10 +399,95 @@ class DivLogNorm(Normalize):
         # docstring inherited.
         super().autoscale_None(np.ma.masked_less_equal(A, 0, copy=False))
 
-class DivSymLogNorm(colors.SymLogNorm):
-    def __init__(self, linthresh, centerpct=0.5, linscale=1.0, vmin=None, vmax=None, clip=False):
-        super().__init__(linthresh, linscale, vmin, vmax, clip)
-        self.centerpct = centerpct
+## Only works with older matplotlib versions
+# class DivSymLogNorm(colors.SymLogNorm):
+#     def __init__(self, linthresh, centerpct=0.5, linscale=1.0, vmin=None, vmax=None, clip=False):
+#         super().__init__(linthresh, linscale, vmin, vmax, clip)
+#         self.centerpct = centerpct
+#
+#     def __call__(self, value, clip=None):
+#         if clip is None:
+#             clip = self.clip
+#
+#         result, is_scalar = self.process_value(value)
+#         self.autoscale_None(result)
+#         vmin, vmax = self.vmin, self.vmax
+#
+#         if vmin > vmax:
+#             raise ValueError("minvalue must be less than or equal to maxvalue")
+#         elif vmin == vmax:
+#             result.fill(0)
+#         else:
+#             if clip:
+#                 mask = np.ma.getmask(result)
+#                 result = np.ma.array(np.clip(result.filled(vmax), vmin, vmax),
+#                                      mask=mask)
+#             # in-place equivalent of above can be much faster
+#             resdat = self._transform(result.data)
+#             resdat -= self._lower
+#             resdat /= (self._upper - self._lower)
+#             result = np.ma.masked_array(
+#                 np.interp(result, [0, self.centerpct, 1],
+#                           [0, 0.5, 1.]), mask=np.ma.getmask(result))
+#
+#         if is_scalar:
+#             result = result[0]
+#         return result
+
+class DivSymLogNorm(Normalize):
+    """
+    The symmetrical logarithmic scale is logarithmic in both the
+    positive and negative directions from the origin.
+
+    This is just edited to adjust the centerpoint with the centerpct parameter
+
+    Since the values close to zero tend toward infinity, there is a
+    need to have a range around zero that is linear.  The parameter
+    *linthresh* allows the user to specify the size of this range
+    (-*linthresh*, *linthresh*).
+    """
+    def __init__(self, linthresh, centerpct=0.5, linscale=1.0, vmin=None, vmax=None,
+                 clip=False, *, base=None):
+        """
+        Parameters
+        ----------
+        linthresh : float
+            The range within which the plot is linear (to avoid having the plot
+            go to infinity around zero).
+
+        linscale : float, default: 1
+            This allows the linear range (-*linthresh* to *linthresh*)
+            to be stretched relative to the logarithmic range. Its
+            value is the number of powers of *base* to use for each
+            half of the linear range.
+
+            For example, when *linscale* == 1.0 (the default) and
+            ``base=10``, then space used for the positive and negative
+            halves of the linear range will be equal to a decade in
+            the logarithmic.
+
+        base : float, default: None
+            If not given, defaults to ``np.e`` (consistent with prior
+            behavior) and warns.
+
+            In v3.3 the default value will change to 10 to be consistent with
+            `.SymLogNorm`.
+
+            To suppress the warning pass *base* as a keyword argument.
+
+        """
+        Normalize.__init__(self, vmin, vmax, clip)
+        if base is None:
+            self._base = 10  # default to base 10
+        else:
+            self._base = base
+        self._log_base = np.log(self._base)
+
+        self.linthresh = float(linthresh)
+        self.centerpct = float(centerpct)
+        self._linscale_adj = (linscale / (1.0 - self._base ** -1))
+        if vmin is not None and vmax is not None:
+            self._transform_vmin_vmax()
 
     def __call__(self, value, clip=None):
         if clip is None:
@@ -346,6 +517,52 @@ class DivSymLogNorm(colors.SymLogNorm):
         if is_scalar:
             result = result[0]
         return result
+
+    def _transform(self, a):
+        """Inplace transformation."""
+        with np.errstate(invalid="ignore"):
+            masked = np.abs(a) > self.linthresh
+        sign = np.sign(a[masked])
+        log = (self._linscale_adj +
+               np.log(np.abs(a[masked]) / self.linthresh) / self._log_base)
+        log *= sign * self.linthresh
+        a[masked] = log
+        a[~masked] *= self._linscale_adj
+        return a
+
+    def _inv_transform(self, a):
+        """Inverse inplace Transformation."""
+        masked = np.abs(a) > (self.linthresh * self._linscale_adj)
+        sign = np.sign(a[masked])
+        exp = np.power(self._base,
+                       sign * a[masked] / self.linthresh - self._linscale_adj)
+        exp *= sign * self.linthresh
+        a[masked] = exp
+        a[~masked] /= self._linscale_adj
+        return a
+
+    def _transform_vmin_vmax(self):
+        """Calculate vmin and vmax in the transformed system."""
+        vmin, vmax = self.vmin, self.vmax
+        arr = np.array([vmax, vmin]).astype(float)
+        self._upper, self._lower = self._transform(arr)
+
+    def inverse(self, value):
+        if not self.scaled():
+            raise ValueError("Not invertible until scaled")
+        val = np.ma.asarray(value)
+        val = val * (self._upper - self._lower) + self._lower
+        return self._inv_transform(val)
+
+    def autoscale(self, A):
+        # docstring inherited.
+        super().autoscale(A)
+        self._transform_vmin_vmax()
+
+    def autoscale_None(self, A):
+        # docstring inherited.
+        super().autoscale_None(A)
+        self._transform_vmin_vmax()
 
 # # For use with nplab_qtplot_v0.2.5... Won't install if qtplot isn't installed
 reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
