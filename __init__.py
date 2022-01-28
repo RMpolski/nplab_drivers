@@ -13,10 +13,10 @@ from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
 from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
 from qcodes.instrument_drivers.stanford_research.SR830 import SR830
 ## This SR865A is the standard one, with normal error handling
-from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
+# from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
 ## This SR865A contains error handling that allows a timeout error to occur
 ## and keeps measuring
-# from qcodes.instrument_drivers.nplab_drivers.SR865A import SR865A
+from qcodes.instrument_drivers.nplab_drivers.SR865A import SR865A
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
