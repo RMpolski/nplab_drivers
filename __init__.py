@@ -18,6 +18,7 @@ from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
 from qcodes.instrument_drivers.nplab_drivers.SRDC205 import SRDC205
 from qcodes.instrument_drivers.nplab_drivers.Lakeshore211 import Lakeshore211
+from qcodes.instrument_drivers.nplab_drivers.Siglent1025 import Siglent1025
 from qcodes.instrument_drivers.nplab_drivers.plot_tools import (get2d_dat,
                                                     dvdi2dfromiv, concat_2d,
                                                     val_to_index, mov_average,

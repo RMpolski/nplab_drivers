@@ -19,6 +19,8 @@ from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
 from qcodes.instrument_drivers.nplab_drivers.SRDC205 import SRDC205
 from qcodes.instrument_drivers.nplab_drivers.Lakeshore211 import Lakeshore211
+from qcodes.instrument_drivers.nplab_drivers.Keithley_6221_RS232 import Keithley_6221_rs232
+from qcodes.instrument_drivers.nplab_drivers.Siglent1025 import Siglent1025
 import builtins
 
 if sys.platform == 'win32':
@@ -138,9 +140,9 @@ def triton_instrs(instr_str):
     if instr_str == 'triton':
         triton = Triton('triton', 'triton.local', 33576)
         builtins.triton = triton
-    if instr_str == 'k6':
-        k6 = Keithley_6221('k6', 'GPIB::12::INSTR')
-        builtins.k6 = k6
+    # if instr_str == 'k6':
+    #     k6 = Keithley_6221('k6', 'GPIB::12::INSTR')
+    #     builtins.k6 = k6
     elif instr_str == 'k2182':
         k2182 = Keithley_2182a('k2182', 'GPIB::13::INSTR')
         builtins.k2182 = k2182
@@ -148,7 +150,7 @@ def triton_instrs(instr_str):
         k2015 = Keithley_2000('k2015', 'GPIB::1::INSTR')
         builtins.k2015 = k2015
     elif instr_str == 'k2200':
-        k2200 = Keithley_2200('k2200', 'GPIB::19::INSTR')
+        k2200 = Keithley_2200('k2200', 'GPIB1::23::INSTR')
         builtins.k2200 = k2200
     elif instr_str == 'seekat':
         seekat = Seekat('seekat', 'COM6', timeout=8)
@@ -180,6 +182,12 @@ def triton_instrs(instr_str):
     elif instr_str == 'srdc':
         srdc = SRDC205('srdc', 'COM3')
         builtins.srdc = srdc
+    elif instr_str == 'k6':
+        k6 = Keithley_6221_rs232('k6', 'COM4')
+        builtins.k6 = k6
+    elif instr_str == 'sig1025':
+        sig1025 = Siglent1025('sig1025', 'USB0::0xF4ED::0xEE3A::SDG10GA4150294::INSTR')
+        builtins.sig1025 = sig1025
 
 def stick_setup_instrs(instr_str):
     if instr_str == 'lakeshore':
