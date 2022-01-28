@@ -703,5 +703,5 @@ class Keithley_6221(VisaInstrument):
         first command and then the value afterward"""
 
         val = self.ask('SYST:COMM:SER:SEND "{}"\nSYST:COMM:SER:ENT?'.format(cmd))
-        nothing = self.visa_handle.read()
+        # nothing = self.visa_handle.read()
         return val
