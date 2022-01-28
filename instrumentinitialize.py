@@ -13,7 +13,11 @@ from qcodes.instrument_drivers.nplab_drivers.SIM900 import SIM900
 from qcodes.instrument_drivers.nplab_drivers.SIM900_stick import SIM900_stick
 from qcodes.instrument_drivers.nplab_drivers.SIM900_rs232 import SIM900_rs232
 from qcodes.instrument_drivers.stanford_research.SR830 import SR830
+## This SR865A is the standard one, with normal error handling
 from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
+## This SR865A contains error handling that allows a timeout error to occur
+## and keeps measuring
+# from qcodes.instrument_drivers.nplab_drivers.SR865A import SR865A
 from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
 from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
 from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560

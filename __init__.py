@@ -1,24 +1,28 @@
 import sys
 import subprocess
 
-from ..tektronix.Keithley_2000 import Keithley_2000
-from .Keithley_6221 import Keithley_6221
-from .Keithley_2182a import Keithley_2182a
-from .Keithley_2200 import Keithley_2200
-from .LR_700 import LR_700
-from .SIM900 import SIM900
-from .SIM900_stick import SIM900_stick
-from .SIM900_rs232 import SIM900_rs232
-from .OpenDacs_Seekat import Seekat
-from .OpenDacs_DAC_ADC import DAC_ADC
-from ..stanford_research.SR830 import SR830
-from ..stanford_research.SR865A import SR865A
-from .vdpArduino import vdpArduino
-from .NPTriton import Triton
-from .SR560 import SR560
-from .SRDC205 import SRDC205
-from .Lakeshore211 import Lakeshore211
-from .plot_tools import (get2d_dat,
+from qcodes.instrument_drivers.tektronix.Keithley_2000 import Keithley_2000
+from qcodes.instrument_drivers.nplab_drivers.Keithley_6221 import Keithley_6221
+from qcodes.instrument_drivers.nplab_drivers.Keithley_2182a import Keithley_2182a
+from qcodes.instrument_drivers.nplab_drivers.Keithley_2200 import Keithley_2200
+from qcodes.instrument_drivers.nplab_drivers.LR_700 import LR_700
+from qcodes.instrument_drivers.nplab_drivers.SIM900 import SIM900
+from qcodes.instrument_drivers.nplab_drivers.SIM900_stick import SIM900_stick
+from qcodes.instrument_drivers.nplab_drivers.SIM900_rs232 import SIM900_rs232
+from qcodes.instrument_drivers.nplab_drivers.OpenDacs_Seekat import Seekat
+from qcodes.instrument_drivers.nplab_drivers.OpenDacs_DAC_ADC import DAC_ADC
+from qcodes.instrument_drivers.stanford_research.SR830 import SR830
+## This SR865A is the standard one, with normal error handling
+from qcodes.instrument_drivers.stanford_research.SR865A import SR865A
+## This SR865A contains error handling that allows a timeout error to occur
+## and keeps measuring
+# from qcodes.instrument_drivers.nplab_drivers.SR865A import SR865A
+from qcodes.instrument_drivers.nplab_drivers.vdpArduino import vdpArduino
+from qcodes.instrument_drivers.nplab_drivers.NPTriton import Triton
+from qcodes.instrument_drivers.nplab_drivers.SR560 import SR560
+from qcodes.instrument_drivers.nplab_drivers.SRDC205 import SRDC205
+from qcodes.instrument_drivers.nplab_drivers.Lakeshore211 import Lakeshore211
+from qcodes.instrument_drivers.nplab_drivers.plot_tools import (get2d_dat,
                         dvdi2dfromiv, concat_2d,
                         val_to_index, mov_average,
                         iv_from_dvdi,
@@ -30,19 +34,19 @@ from .plot_tools import (get2d_dat,
                         graphene_mobilityB,
                         gr_Boltzmannfit)
 
-from .time_params import (
+from qcodes.instrument_drivers.nplab_drivers.time_params import (
         time_from_start,
         time_stamp,
         output_datetime,
         output_date_strings)
 
-from .common_commands import (
+from qcodes.instrument_drivers.nplab_drivers.common_commands import (
         single_param_sweep,
         twod_param_sweep,
         data_log, breakat)
 
 
-from .instrumentinitialize import (
+from qcodes.instrument_drivers.nplab_drivers.instrumentinitialize import (
         ppms_init,
         triton_init,
         stick_setup_init)
